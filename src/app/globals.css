@@ -1,0 +1,51 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: light --default, dark --prefersdark;
+}
+@import "leaflet/dist/leaflet.css";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Warna data (validasi: skill dataviz, ramp biru ordinal + kategori) */
+:root {
+  --viz-surface: #fcfcfb;
+  --viz-grid: #e1e0d9;
+  --viz-axis: #c3c2b7;
+  --viz-muted: #898781;
+  --viz-1: #2a78d6;
+  --viz-2: #eb6834;
+  --viz-kosong: #e1e0d9;
+  --laut: #eef3f8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    --viz-surface: #1a1a19;
+    --viz-grid: #2c2c2a;
+    --viz-axis: #383835;
+    --viz-1: #3987e5;
+    --viz-2: #d95926;
+    --viz-kosong: #383835;
+    --laut: #121417;
+  }
+}
+:root[data-theme="dark"] {
+  --viz-surface: #1a1a19;
+  --viz-grid: #2c2c2a;
+  --viz-axis: #383835;
+  --viz-1: #3987e5;
+  --viz-2: #d95926;
+  --viz-kosong: #383835;
+  --laut: #121417;
+}
+
+.leaflet-container {
+  background: var(--laut);
+  font-family: inherit;
+}
+
+.prosa p + p {
+  margin-top: 0.75rem;
+}
