@@ -78,6 +78,7 @@ const BISNIS = [
 export default function Alur() {
   return (
     <Halaman
+      label="Tentang"
       judul="Alur penelitian"
       pengantar={
         <p>
@@ -94,7 +95,7 @@ export default function Alur() {
                 <span className="absolute -left-[37px] top-1 grid h-6 w-6 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-content">
                   {t.no}
                 </span>
-                <div className="rounded-box border border-base-300 p-5">
+                <div className="rounded-[1.25rem] border border-base-300 p-5">
                   <h3 className="font-semibold">{t.judul}</h3>
                   <p className="mt-1 text-sm text-base-content/60">Masukan: {t.masuk}</p>
                   <p className="mt-3 text-base-content/80">{t.isi}</p>
@@ -110,20 +111,20 @@ export default function Alur() {
 
       <Bagian judul="Desain anti-bocor waktu">
         <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-box bg-base-200/60 p-5">
+          <div className="rounded-[1.25rem] bg-base-200 p-5">
             <p className="text-sm text-base-content/60">Riwayat bahaya</p>
             <p className="mt-1 text-lg font-semibold">1973–2019</p>
             <p className="mt-2 text-sm text-base-content/75">Katalog USGS M ≥ 5 setelah gempa susulan dibuang.</p>
           </div>
-          <div className="rounded-box bg-base-200/60 p-5">
+          <div className="rounded-[1.25rem] bg-base-200 p-5">
             <p className="text-sm text-base-content/60">Pelatihan model</p>
             <p className="mt-1 text-lg font-semibold">2008–2019</p>
             <p className="mt-2 text-sm text-base-content/75">46.577 pasangan gempa–kabupaten, 231 rusak.</p>
           </div>
-          <div className="rounded-box border-2 border-primary/50 p-5">
-            <p className="text-sm text-base-content/60">Pengujian</p>
+          <div className="rounded-[1.25rem] bg-primary text-primary-content p-5">
+            <p className="text-sm opacity-85">Pengujian</p>
             <p className="mt-1 text-lg font-semibold">2020–2026</p>
-            <p className="mt-2 text-sm text-base-content/75">Kerusakan yang tidak pernah dilihat model saat dibangun.</p>
+            <p className="mt-2 text-sm opacity-90">Kerusakan yang tidak pernah dilihat model saat dibangun.</p>
           </div>
         </div>
         <p className="mt-4 max-w-3xl text-sm text-base-content/70">
@@ -135,7 +136,7 @@ export default function Alur() {
       <Bagian judul="Kaitannya dengan bisnis reasuransi">
         <div className="grid gap-4 md:grid-cols-2">
           {BISNIS.map((b) => (
-            <div key={b.judul} className="rounded-box border border-base-300 p-5">
+            <div key={b.judul} className="rounded-[1.25rem] border border-base-300 p-5">
               <h3 className="font-semibold">{b.judul}</h3>
               <p className="mt-2 text-base-content/75">{b.isi}</p>
             </div>

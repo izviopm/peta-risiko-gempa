@@ -20,7 +20,7 @@ export function DotPlot({
   acuanLabel: string;
 }) {
   return (
-    <figure className="rounded-box border border-base-300 p-5">
+    <figure className="rounded-[1.25rem] bg-base-200/60 p-5">
       <figcaption className="font-medium">{judul}</figcaption>
       <div className="mt-4 space-y-1">
         {baris.map((b) => (
@@ -69,7 +69,7 @@ export function Forest({
   domain: [number, number];
 }) {
   return (
-    <figure className="rounded-box border border-base-300 p-5">
+    <figure className="rounded-[1.25rem] bg-base-200/60 p-5">
       <figcaption className="font-medium">{judul}</figcaption>
       <div className="mt-4">
         {baris.map((b, i) => (
@@ -129,7 +129,7 @@ export function GarisK({ data }: { data: { k: number; R2_skater: number; R2_kmea
   ];
   const a = aktif == null ? null : data[aktif];
   return (
-    <figure className="rounded-box border border-base-300 p-5">
+    <figure className="rounded-[1.25rem] bg-base-200/60 p-5">
       <figcaption className="font-medium">Homogenitas zona (R² antar-zona) menurut jumlah zona k</figcaption>
       <div className="mt-2 flex gap-4 text-sm">
         {seri.map((s) => (

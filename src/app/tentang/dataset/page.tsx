@@ -78,6 +78,7 @@ const DIKELUARKAN = [
 export default function Dataset() {
   return (
     <Halaman
+      label="Tentang"
       judul="Dataset"
       pengantar={
         <p>
@@ -89,7 +90,7 @@ export default function Dataset() {
       <Bagian judul="Sumber data">
         <div className="grid gap-4 md:grid-cols-2">
           {DATA.map((d) => (
-            <article key={d.nama} className="rounded-box border border-base-300 p-5">
+            <article key={d.nama} className="rounded-[1.25rem] border border-base-300 p-5">
               <h3 className="font-semibold">{d.nama}</h3>
               <p className="text-sm text-base-content/60">
                 {d.penyedia} ·{" "}
@@ -116,7 +117,7 @@ export default function Dataset() {
       </Bagian>
 
       <Bagian judul="Data yang dikurangi atau tidak dipakai">
-        <div className="overflow-x-auto rounded-box border border-base-300">
+        <div className="overflow-x-auto rounded-[1.25rem] border border-base-300">
           <table className="table">
             <thead>
               <tr>

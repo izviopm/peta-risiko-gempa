@@ -60,6 +60,7 @@ const VERSI = [
 export default function Keterbatasan() {
   return (
     <Halaman
+      label="Tentang"
       judul="Keterbatasan dan transparansi"
       pengantar={<p>Kami mencatat setiap penyederhanaan, asumsi, dan data yang dikurangi supaya hasil penelitian ini bisa dinilai apa adanya.</p>}
     >
@@ -87,7 +88,7 @@ export default function Keterbatasan() {
           berikutnya dievaluasi, dan setiap perubahan justru menurunkan metrik indeks usulan. Model dibekukan pada v3. Data uji dipakai
           sekali lagi untuk menilai pembanding zona OJK tanpa mengubah model.
         </p>
-        <div className="mt-4 overflow-x-auto rounded-box border border-base-300">
+        <div className="mt-4 overflow-x-auto rounded-[1.25rem] border border-base-300">
           <table className="table">
             <thead>
               <tr>

@@ -47,6 +47,7 @@ export default function Hasil() {
 
   return (
     <Halaman
+      label="Tentang"
       judul="Hasil"
       pengantar={<p>Semua angka berasal dari model versi 3 yang dibekukan pada 31 Oktober 2026 dan sudah diverifikasi dengan menjalankan ulang seluruh pipeline.</p>}
     >
@@ -55,7 +56,7 @@ export default function Hasil() {
           Koefisien model Negative Binomial pada data latih 2008–2019, dengan fitur terstandardisasi. IRR menunjukkan perubahan
           ekspektasi kerusakan untuk kenaikan satu simpangan baku.
         </p>
-        <div className="mt-4 overflow-x-auto rounded-box border border-base-300">
+        <div className="mt-4 overflow-x-auto rounded-[1.25rem] border border-base-300">
           <table className="table">
             <thead>
               <tr>
@@ -95,7 +96,7 @@ export default function Hasil() {
           <DotPlot judul="AUC: kemampuan membedakan kabupaten rusak vs tidak" baris={baris("auc_rusak")} domain={[0.45, 0.7]} acuan={0.5} acuanLabel="0,5 = acak" />
           <DotPlot judul="Korelasi Spearman dengan kerusakan aktual" baris={baris("spearman")} domain={[-0.05, 0.3]} acuan={0} acuanLabel="0 = tidak berkorelasi" />
         </div>
-        <div className="mt-4 overflow-x-auto rounded-box border border-base-300">
+        <div className="mt-4 overflow-x-auto rounded-[1.25rem] border border-base-300">
           <table className="table">
             <thead>
               <tr>
@@ -139,7 +140,7 @@ export default function Hasil() {
 
       <Bagian id="ketahanan" judul="3. Uji ketahanan">
         <p className="max-w-3xl text-base-content/75">Selisih AUC usulan − pembanding pada lima skenario asumsi (* signifikan, bootstrap kabupaten).</p>
-        <div className="mt-4 overflow-x-auto rounded-box border border-base-300">
+        <div className="mt-4 overflow-x-auto rounded-[1.25rem] border border-base-300">
           <table className="table table-sm">
             <thead>
               <tr>
@@ -177,7 +178,7 @@ export default function Hasil() {
 
       <Bagian id="zonasi" judul="4. Zonasi kontigu vs K-Means (RM3, H2)">
         <div className="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
-          <div className="overflow-x-auto rounded-box border border-base-300">
+          <div className="overflow-x-auto rounded-[1.25rem] border border-base-300">
             <table className="table">
               <thead>
                 <tr>
@@ -217,7 +218,7 @@ export default function Hasil() {
 
       <Bagian id="ojk" judul="5. Kesesuaian dengan zona tarif OJK 2017">
         <div className="grid gap-4 lg:grid-cols-2">
-          <figure className="rounded-box border border-base-300 p-5">
+          <figure className="rounded-[1.25rem] border border-base-300 p-5">
             <figcaption className="font-medium">Jumlah kabupaten: kuintil indeks usulan × zona OJK</figcaption>
             <table className="mt-3 w-full table-fixed text-center text-sm tabular-nums">
               <thead>
@@ -262,7 +263,7 @@ export default function Hasil() {
               Tiga kabupaten (Kolaka, Muna, Tarakan) berada di zona OJK ≤ II tetapi di dua kuintil indeks teratas. Lima puluh dua kabupaten,
               kebanyakan di pantai utara Jawa dan Jakarta, berada di zona OJK ≥ IV tetapi indeksnya rendah.
             </p>
-            <div className="rounded-box border border-warning/40 bg-warning/10 p-4 text-sm">
+            <div className="rounded-[1.25rem] bg-warning text-warning-content p-4 text-sm">
               Selisih ini tidak boleh dibaca sebagai tarif yang terlalu tinggi atau terlalu rendah. Indeks hanya mencerminkan guncangan
               merusak yang tercatat selama 47 tahun, sedangkan zona OJK berbasis bahaya probabilistik dan dapat memperhitungkan kondisi
               tanah serta kejadian langka, misalnya sesar di dekat Jakarta. Selisih ini menandai kabupaten yang layak ditinjau.

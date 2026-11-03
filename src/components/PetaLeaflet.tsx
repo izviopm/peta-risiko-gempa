@@ -1,7 +1,10 @@
 "use client";
 
 import L from "leaflet";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { Search } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useGelap } from "@/lib/tema";
 
 type Prop = {
   key: string;
@@ -22,15 +25,16 @@ type Prop = {
 };
 type FC = GeoJSON.FeatureCollection<GeoJSON.MultiPolygon | GeoJSON.Polygon, Prop>;
 
-// Ramp biru ordinal (skill dataviz): terang -> gelap pada mode terang, sebaliknya pada mode gelap.
+// Ramp biru ai ordinal (dari token primary): terang -> gelap pada mode terang, sebaliknya pada mode gelap.
 const RAMP = {
-  terang: ["#86b6ef", "#5598e7", "#2a78d6", "#1c5cab", "#104281"],
-  gelap: ["#184f95", "#256abf", "#3987e5", "#6da7ec", "#b7d3f6"],
+  terang: ["#bcd5ec", "#7fa9d3", "#4a7fb5", "#2f5d8c", "#183754"],
+  gelap: ["#1f3a57", "#2f5d8c", "#4f86bd", "#8db4dc", "#d3e4f4"],
 };
-const KOSONG = { terang: "#e1e0d9", gelap: "#383835" };
+const KOSONG = { terang: "#e2e8f0", gelap: "#2a3a4d" };
+const TEPI = { terang: "#ffffff", gelap: "#172230" };
 const BANDING = {
-  terang: { sesuai: "#c3c2b7", terlalu_rendah: "#eb6834", terlalu_tinggi: "#2a78d6" },
-  gelap: { sesuai: "#52514e", terlalu_rendah: "#d95926", terlalu_tinggi: "#3987e5" },
+  terang: { sesuai: "#cbd5e1", terlalu_rendah: "#c2410c", terlalu_tinggi: "#2f5d8c" },
+  gelap: { sesuai: "#3a4d63", terlalu_rendah: "#f9b77a", terlalu_tinggi: "#8db4dc" },
 };
 
 const LAPIS = {
@@ -54,18 +58,6 @@ function kuintil(nilai: number[]) {
 }
 const kelasDari = (v: number, batas: number[]) => 1 + batas.filter((b) => v > b).length;
 
-const MQ = "(prefers-color-scheme: dark)";
-function useGelap() {
-  return useSyncExternalStore(
-    (cb) => {
-      const m = matchMedia(MQ);
-      m.addEventListener("change", cb);
-      return () => m.removeEventListener("change", cb);
-    },
-    () => matchMedia(MQ).matches,
-    () => false,
-  );
-}
 
 export default function PetaLeaflet() {
   const wadah = useRef<HTMLDivElement>(null);
@@ -117,48 +109,94 @@ export default function PetaLeaflet() {
     return RAMP[mode][k - 1];
   };
 
-  // Peta dibuat sekali.
+  // Gaya dibaca lewat ref agar layer cukup dibuat sekali; ganti lapisan/tema hanya memanggil setStyle.
+  const terpilih = useRef<string | null>(null);
+  const gaya = useRef<(p: Prop) => L.PathOptions>(() => ({}));
+  const sorot = gelap ? "#f9b77a" : "#1e293b";
+  const warnaSorot = useRef(sorot);
+  // Diperbarui setelah render (effect pertama, jadi selalu jalan sebelum effect lain di bawah).
+  useEffect(() => {
+    warnaSorot.current = sorot;
+    gaya.current = (p) => {
+      const aktif = terpilih.current === p.key;
+      return { fillColor: warna(p, lapis), fillOpacity: 1, color: aktif ? sorot : TEPI[mode], weight: aktif ? 2.5 : 0.6 };
+    };
+  });
+
+  // Peta dibuat sekali. Renderer canvas jauh lebih ringan daripada SVG untuk 514 poligon detail.
   useEffect(() => {
     if (!wadah.current || peta.current) return;
-    const m = L.map(wadah.current, { zoomSnap: 0.25, minZoom: 3, maxZoom: 10, attributionControl: true }).setView([-2.5, 118], 4.75);
+    const m = L.map(wadah.current, {
+      preferCanvas: true,
+      zoomSnap: 0.25,
+      zoomDelta: 0.5,
+      wheelPxPerZoomLevel: 120,
+      minZoom: 3,
+      maxZoom: 10,
+      scrollWheelZoom: false, // aktif setelah peta diklik, agar scroll halaman tidak tersangkut di peta
+      fadeAnimation: true,
+      zoomAnimation: true,
+    }).setView([-2.5, 118], 4.75);
     m.attributionControl.setPrefix(false).addAttribution('Batas wilayah: <a href="https://www.geoboundaries.org">geoBoundaries</a> (CC BY 4.0)');
+    m.on("click focus", () => m.scrollWheelZoom.enable());
+    m.on("mouseout blur", () => m.scrollWheelZoom.disable());
     peta.current = m;
+    // Ukuran wadah bisa berubah setelah peta dibuat (font, layout); sesuaikan ulang selama pengguna belum menggeser.
+    let digeser = false;
+    m.on("dragstart", () => (digeser = true));
+    const ro = new ResizeObserver(() => {
+      m.invalidateSize();
+      if (!digeser && lapisGeo.current) m.fitBounds(lapisGeo.current.getBounds(), { padding: [8, 8], animate: false });
+    });
+    ro.observe(wadah.current);
     return () => {
+      ro.disconnect();
       m.remove();
       peta.current = null;
     };
   }, []);
 
-  // Gambar ulang poligon saat data, lapis, atau tema berubah.
+  // Layer poligon dibuat sekali saat data siap.
   useEffect(() => {
     const m = peta.current;
-    if (!m || !data || !batas) return;
-    const pertama = !lapisGeo.current;
-    lapisGeo.current?.remove();
-    const tepi = gelap ? "#1a1a19" : "#fcfcfb";
+    if (!m || !data || !batas || lapisGeo.current) return;
     lapisGeo.current = L.geoJSON(data, {
-      style: (ft) => ({ fillColor: warna(ft!.properties as Prop, lapis), fillOpacity: 1, color: tepi, weight: 0.6 }),
+      style: (ft) => gaya.current(ft!.properties as Prop),
       onEachFeature: (ft, ly) => {
         const p = ft.properties as Prop;
-        ly.bindTooltip(`<strong>${p.nama}</strong><br>${p.prov}`, { sticky: true });
+        ly.bindTooltip(`<strong>${p.nama}</strong><br>${p.prov}`, { sticky: true, direction: "top", offset: [0, -8] });
         ly.on({
-          click: () => setPilih(p),
-          mouseover: (e) => (e.target as L.Path).setStyle({ weight: 2, color: gelap ? "#f0efec" : "#0b0b0b" }),
-          mouseout: (e) => (e.target as L.Path).setStyle({ weight: 0.6, color: tepi }),
+          click: () => {
+            terpilih.current = p.key;
+            setPilih(p);
+            lapisGeo.current?.setStyle((f) => gaya.current(f!.properties as Prop));
+          },
+          mouseover: (e) => {
+            const l = e.target as L.Path;
+            l.setStyle({ weight: 2, color: warnaSorot.current });
+            l.bringToFront();
+          },
+          mouseout: (e) => (e.target as L.Path).setStyle(gaya.current(p)),
         });
       },
     }).addTo(m);
-    if (pertama) m.fitBounds(lapisGeo.current.getBounds(), { padding: [8, 8] });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, batas, lapis, gelap]);
+    m.fitBounds(lapisGeo.current.getBounds(), { padding: [8, 8], animate: false });
+  }, [data, batas]);
+
+  // Ganti lapisan atau tema: cukup warnai ulang.
+  useEffect(() => {
+    lapisGeo.current?.setStyle((f) => gaya.current(f!.properties as Prop));
+  }, [lapis, gelap, batas]);
 
   const fokus = (key: string) => {
     if (!lapisGeo.current) return;
     lapisGeo.current.eachLayer((ly) => {
       const ft = (ly as L.GeoJSON).feature as GeoJSON.Feature<GeoJSON.Geometry, Prop>;
       if (ft.properties.key === key) {
-        peta.current?.fitBounds((ly as L.Polygon).getBounds(), { maxZoom: 8 });
+        terpilih.current = key;
         setPilih(ft.properties);
+        lapisGeo.current?.setStyle((f) => gaya.current(f!.properties as Prop));
+        peta.current?.flyToBounds((ly as L.Polygon).getBounds(), { maxZoom: 8, duration: 0.8, padding: [24, 24] });
       }
     });
   };
@@ -175,24 +213,36 @@ export default function PetaLeaflet() {
   const info = LAPIS[lapis];
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-end gap-3">
-            <label className="form-control">
-              <span className="mb-1 block text-sm text-base-content/70">Lapisan peta</span>
-              <select className="select select-sm w-72 max-w-full" value={lapis} onChange={(e) => setLapis(e.target.value as Lapis)}>
-                {Object.entries(LAPIS).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="form-control">
-              <span className="mb-1 block text-sm text-base-content/70">Cari kabupaten/kota</span>
+    <div className="space-y-4">
+      <div className="kartu p-4 sm:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <fieldset>
+            <legend className="mb-2 text-sm font-medium text-base-content/70">Lapisan peta</legend>
+            <div className="flex flex-wrap gap-2">
+              {(Object.keys(LAPIS) as Lapis[]).map((k) => (
+                <motion.button
+                  key={k}
+                  type="button"
+                  aria-pressed={lapis === k}
+                  onClick={() => setLapis(k)}
+                  whileTap={{ scale: 0.96 }}
+                  className={`relative min-h-10 cursor-pointer rounded-full border px-4 text-sm transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                    lapis === k ? "border-primary font-medium text-primary-content" : "border-base-300 bg-base-100 hover:border-primary/50"
+                  }`}
+                >
+                  {lapis === k && (
+                    <motion.span layoutId="lapis-aktif" className="absolute inset-0 rounded-full bg-primary" transition={{ type: "spring", stiffness: 420, damping: 34 }} aria-hidden />
+                  )}
+                  <span className="relative">{LAPIS[k].label}</span>
+                </motion.button>
+              ))}
+            </div>
+          </fieldset>
+          <label className="w-full shrink-0 lg:w-72">
+            <span className="mb-2 block text-sm font-medium text-base-content/70">Cari kabupaten/kota</span>
+            <span className="input w-full rounded-full">
+              <Search className="size-4 opacity-60" aria-hidden />
               <input
-                className="input input-sm w-64 max-w-full"
                 list="daftar-kab"
                 placeholder="mis. Cianjur"
                 onChange={(e) => {
@@ -200,33 +250,65 @@ export default function PetaLeaflet() {
                   if (k) fokus(k.key);
                 }}
               />
-              <datalist id="daftar-kab">
-                {data?.features.map((x) => <option key={x.properties.key} value={x.properties.nama} />)}
-              </datalist>
-            </label>
-          </div>
+            </span>
+            <datalist id="daftar-kab">
+              {data?.features.map((x) => <option key={x.properties.key} value={x.properties.nama} />)}
+            </datalist>
+          </label>
+        </div>
+      </div>
 
-          <div className="relative overflow-hidden rounded-box border border-base-300">
-            <div ref={wadah} className="h-[460px] w-full sm:h-[560px]" role="region" aria-label={`Peta: ${info.label}`} />
+      <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
+        <div className="kartu overflow-hidden p-2">
+          <div className="relative overflow-hidden rounded-[1.25rem]">
+            <div ref={wadah} data-lenis-prevent className="h-[460px] w-full sm:h-[600px]" role="region" aria-label={`Peta: ${info.label}`} />
             {!data && !galat && <div className="absolute inset-0 grid place-items-center text-sm text-base-content/60">Memuat peta…</div>}
             {galat && <div className="absolute inset-0 grid place-items-center text-sm text-error">Gagal memuat data peta.</div>}
           </div>
-
-          <Legenda lapis={lapis} mode={mode} />
+          <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-3">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div key={lapis} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                <Legenda lapis={lapis} mode={mode} />
+              </motion.div>
+            </AnimatePresence>
+            <p className="text-xs text-base-content/60">Klik peta untuk zoom dengan scroll · geser untuk berpindah</p>
+          </div>
         </div>
 
-        <aside className="rounded-box border border-base-300 p-5" aria-live="polite">
-          {pilih ? <Detail p={pilih} /> : <p className="text-sm text-base-content/70">Klik salah satu kabupaten/kota di peta, atau cari namanya, untuk melihat rinciannya.</p>}
+        <aside className="kartu p-6" aria-live="polite">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={pilih?.key ?? "kosong"}
+              className="h-full"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {pilih ? (
+                <Detail p={pilih} />
+              ) : (
+                <div className="grid h-full min-h-48 place-items-center text-center">
+                  <p className="max-w-56 text-sm text-base-content/65">Klik salah satu kabupaten/kota di peta, atau cari namanya, untuk melihat rinciannya.</p>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </aside>
       </div>
 
-      <section>
+      <section className="kartu p-5 sm:p-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="text-xl font-semibold">Tabel kabupaten/kota</h2>
-          <input className="input input-sm w-64" placeholder="Saring nama atau provinsi" value={cari} onChange={(e) => setCari(e.target.value)} aria-label="Saring tabel" />
+          <div>
+            <h2 className="text-xl font-semibold">Tabel kabupaten/kota</h2>
+            <p className="mt-1 text-sm text-base-content/60">Diurutkan menurut EAD. {daftar.length} baris. Klik baris untuk melihat di peta.</p>
+          </div>
+          <label className="input w-full rounded-full sm:w-64">
+            <Search className="size-4 opacity-60" aria-hidden />
+            <input placeholder="Saring nama atau provinsi" value={cari} onChange={(e) => setCari(e.target.value)} aria-label="Saring tabel" />
+          </label>
         </div>
-        <p className="mt-1 text-sm text-base-content/60">Diurutkan menurut EAD. {daftar.length} baris.</p>
-        <div className="mt-3 max-h-[480px] overflow-auto rounded-box border border-base-300">
+        <div data-lenis-prevent className="mt-4 max-h-[480px] overflow-auto overscroll-contain rounded-[1.25rem] border border-base-300">
           <table className="table table-pin-rows table-sm">
             <thead>
               <tr>
@@ -301,8 +383,6 @@ function Detail({ p }: { p: Prop }) {
       </div>
     );
   const baris: [string, string][] = [
-    ["EAD (rumah ekuivalen hancur total/tahun)", id(p.ead!, 2)],
-    ["Kuintil indeks usulan", `${p.kelas} dari 5`],
     ["Zona tarif gempa OJK 2017", `${ROMAWI[p.ojk_zona ?? 0]}${p.ojk_imputasi ? " (zona kabupaten induk)" : ""}`],
     ["Skor IRBI 2024 gempa", p.irbi == null ? "–" : `${id(p.irbi, 2)} (${p.irbi_kelas?.toLowerCase()})`],
     ["Zona SKATER / K-Means", `${p.skater} / ${p.kmeans}`],
@@ -312,9 +392,21 @@ function Detail({ p }: { p: Prop }) {
   ];
   return (
     <div>
-      <h2 className="text-lg font-semibold">{p.nama}</h2>
+      <h2 className="text-xl font-semibold">{p.nama}</h2>
       <p className="text-sm text-base-content/60">{p.prov}</p>
-      <dl className="mt-4 space-y-3 text-sm">
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="rounded-[1.25rem] bg-primary p-4 text-primary-content">
+          <p className="text-xs opacity-85">EAD / tahun</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">{id(p.ead!, 1)}</p>
+          <p className="text-xs opacity-85">rumah ekuivalen</p>
+        </div>
+        <div className="rounded-[1.25rem] bg-base-200 p-4">
+          <p className="text-xs text-base-content/65">Kuintil indeks</p>
+          <p className="mt-1 text-2xl font-semibold">{p.kelas}<span className="text-base font-normal text-base-content/60"> / 5</span></p>
+          <p className="text-xs text-base-content/65">{p.kelas! >= 4 ? "tinggi" : p.kelas! <= 2 ? "rendah" : "sedang"}</p>
+        </div>
+      </div>
+      <dl className="mt-5 space-y-3 text-sm">
         {baris.map(([k, v]) => (
           <div key={k}>
             <dt className="text-base-content/60">{k}</dt>
@@ -323,7 +415,7 @@ function Detail({ p }: { p: Prop }) {
         ))}
       </dl>
       {p.ojk_banding && p.ojk_banding !== "sesuai" && (
-        <p className="mt-4 rounded-box bg-base-200 p-3 text-xs text-base-content/75">
+        <p className="mt-4 rounded-[1.25rem] bg-warning p-4 text-xs text-warning-content">
           {p.ojk_banding === "terlalu_tinggi"
             ? "Zona OJK lebih tinggi dari kuintil indeks. Ini menandai kabupaten yang layak ditinjau, bukan bukti tarif terlalu tinggi: indeks hanya merekam guncangan merusak 1973–2019."
             : "Zona OJK lebih rendah dari kuintil indeks. Ini sinyal untuk ditinjau, bukan bukti salah zona."}
