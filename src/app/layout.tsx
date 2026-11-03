@@ -32,7 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <div>
               <p className="font-semibold">Peta Risiko Gempa Kabupaten/Kota</p>
               <p className="mt-2 text-base-content/70">
-                Izvio Prijaya Mumin · Divisi IT, PT Reasuransi MAIPARK Indonesia. Draf penelitian v1, November 2026.
+                Izvio Prijaya Mumin · Divisi IT, PT Reasuransi MAIPARK Indonesia. Naskah penelitian versi 1.1, November 2026.
               </p>
             </div>
             <nav aria-label="Navigasi bawah">

@@ -11,8 +11,8 @@ const ANGKA = [
 
 const TEMUAN = [
   {
-    judul: "IRBI 2024 tidak memprediksi lokasi kerusakan",
-    isi: `AUC ${f(irbi.auc_rusak)} dan Spearman ${f(irbi.spearman)}, setara tebakan acak, walaupun IRBI disusun dengan informasi sampai 2024.`,
+    judul: "IRBI 2024 kurang tepat sebagai proxy kerusakan rumah",
+    isi: `AUC ${f(irbi.auc_rusak)} dan Spearman ${f(irbi.spearman)}, setara tebakan acak. IRBI adalah indeks perencanaan penanggulangan bencana yang juga memuat kapasitas daerah, dan tidak dirancang khusus untuk memprediksi lokasi kerusakan rumah.`,
   },
   {
     judul: "Indeks usulan lebih baik dari IRBI dan Entropy",

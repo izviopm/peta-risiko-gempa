@@ -37,7 +37,7 @@ export default function Tentang() {
     <Halaman judul="Tentang penelitian ini">
       <Bagian judul="Naskah">
         <p className="max-w-3xl text-lg">{JUDUL}</p>
-        <p className="mt-3 text-base-content/70">Izvio Prijaya Mumin · Divisi IT, PT Reasuransi MAIPARK Indonesia · Draf v1, 2 November 2026</p>
+        <p className="mt-3 text-base-content/70">Izvio Prijaya Mumin · Divisi IT, PT Reasuransi MAIPARK Indonesia · Versi 1.1, 3 November 2026</p>
       </Bagian>
 
       <Bagian judul="Kontribusi">
@@ -59,6 +59,21 @@ export default function Tentang() {
         <p className="max-w-3xl text-base-content/80">
           Seluruh data bersifat publik (lihat halaman Dataset). Skrip yang mereproduksi setiap angka beserta panduan langkah demi langkah
           dapat diminta dari penulis.
+        </p>
+      </Bagian>
+
+      <Bagian judul="Penafian">
+        <p className="max-w-3xl text-base-content/80">
+          Pandangan dan kesimpulan dalam penelitian ini adalah milik penulis dan tidak mewakili sikap resmi PT Reasuransi MAIPARK Indonesia,
+          BNPB, maupun OJK. Hasilnya berupa indeks relatif antar-kabupaten dari data historis; bukan prakiraan gempa, bukan estimasi
+          kerugian dalam rupiah, dan bukan dasar penetapan tarif, underwriting, atau keputusan investasi.
+        </p>
+      </Bagian>
+
+      <Bagian judul="Konflik kepentingan dan pendanaan">
+        <p className="max-w-3xl text-base-content/80">
+          Penulis bekerja di perusahaan reasuransi yang diawasi OJK dan bergerak di lini risiko gempa. Penelitian ini tidak memakai data
+          eksposur, polis, klaim, maupun data internal perusahaan, dan tidak menerima pendanaan khusus.
         </p>
       </Bagian>
 
