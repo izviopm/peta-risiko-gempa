@@ -5,7 +5,7 @@ const T = {
   id: {
     label: "Tentang",
     judul: "Keterbatasan dan keterbukaan",
-    pengantar: "Kami mencatat setiap penyederhanaan, asumsi, dan data yang dikurangi supaya hasil penelitian ini bisa dinilai apa adanya.",
+    pengantar: "Setiap penyederhanaan, asumsi, dan data yang dikurangi dicatat di sini supaya hasil penelitian ini bisa dinilai apa adanya.",
     lingkupJudul: "Batas cakupan",
     lingkup: [
       "Hanya guncangan gempa. Tsunami, tanah bergerak (likuifaksi), dan longsor tidak dihitung terpisah, padahal kerusakannya ikut tercatat di DIBI (misalnya Palu 2018).",
@@ -19,7 +19,7 @@ const T = {
       {
         judul: "Keterbatasan data",
         isi: [
-          "DIBI hanya mencatat kabupaten yang melapor kerusakan, dan sebagian kerusakan mungkin tidak dilaporkan. Kabupaten yang terguncang tetapi tidak tercatat kami anggap tidak rusak.",
+          "DIBI hanya mencatat kabupaten yang melapor kerusakan, dan sebagian kerusakan mungkin tidak dilaporkan. Kabupaten yang terguncang tetapi tidak tercatat dianggap tidak rusak.",
           "Jam kejadian di DIBI sering berisi nilai bawaan, jadi hanya tanggalnya yang dipakai.",
           "Pada gempa beruntun, kerusakan bisa terhitung dua kali: di Lombok Utara 2018 jumlah rumah rusak lebih banyak dari perkiraan jumlah rumah tangganya (1,34 kali).",
           "Kategori kerusakan tidak selalu diisi; beberapa kejadian besar mencatat nol rumah rusak sedang (misalnya Padang 2009).",
@@ -54,26 +54,26 @@ const T = {
     ],
     versiJudul: "Riwayat versi analisis",
     versiKet:
-      "Data uji dipakai untuk tiga versi model. Setiap perubahan diputuskan dengan alasan ilmiah yang dicatat sebelum versi berikutnya diuji, dan setiap perubahan justru menurunkan hasil indeks kami. Model dibekukan pada versi 3. Data uji dipakai sekali lagi untuk menilai pembanding zona OJK tanpa mengubah model.",
+      "Data uji dipakai untuk tiga versi model. Setiap perubahan diputuskan dengan alasan ilmiah yang dicatat sebelum versi berikutnya diuji, dan setiap perubahan justru menurunkan hasil indeks NB-EAD. Model dibekukan pada versi 3. Data uji dipakai sekali lagi untuk menilai pembanding zona OJK tanpa mengubah model.",
     versi: [
       ["Riwayat guncangan", "2008–2019, semua gempa", "1973–2019, gempa utama", "1973–2019, gempa utama"],
       ["Bobot rusak berat / sedang / ringan", "1 / 0,5 / 0,25", "1 / 0,5 / 0,25", "0,70 / 0,30 / 0,05"],
-      ["Korelasi peringkat indeks kami", "0,297", "0,270", "0,252"],
-      ["AUC indeks kami", "0,678", "0,658", "0,647"],
+      ["Korelasi peringkat indeks NB-EAD", "0,297", "0,270", "0,252"],
+      ["AUC indeks NB-EAD", "0,678", "0,658", "0,647"],
     ],
     versiKolom: ["", "Versi 1", "Versi 2", "Versi 3 (utama)"],
     terbukaJudul: "Catatan keterbukaan",
     terbuka: [
       ["Tujuan dirumuskan ulang setelah melihat hasil.", " Rencana awalnya membuktikan bahwa bobot dari data lebih baik dari bobot sederhana. Karena hanya terbukti sebagian, sumbangan utama penelitian dirumuskan ulang menjadi cara menguji indeks beserta temuannya. Hipotesis awal tetap dilaporkan bersama hasilnya."],
       ["Penggunaan AI.", " Asisten AI (Claude, Anthropic) membantu mencari literatur, menulis kode, dan menyusun draf. Semua angka berasal dari skrip yang dijalankan ulang dari awal; penulis bertanggung jawab atas isinya."],
-      ["Literatur.", " Pencarian hanya lewat OpenAlex, artikel akses terbuka 2024–2026. Klaim \"pertama\" berarti \"sejauh yang kami temukan\"."],
+      ["Literatur.", " Pencarian hanya lewat OpenAlex, artikel akses terbuka 2024–2026. Klaim \"pertama\" berarti \"sejauh yang penulis temukan\"."],
       ["Belum dikerjakan:", " zonasi REDCap, pengujian dengan beberapa titik potong waktu, data bangunan per rumah, dan data klaim asuransi."],
     ],
   },
   en: {
     label: "About",
     judul: "Limitations and transparency",
-    pengantar: "We record every simplification, assumption, and piece of data we dropped, so readers can judge the results for what they are.",
+    pengantar: "Every simplification, assumption, and piece of dropped data is recorded here, so readers can judge the results for what they are.",
     lingkupJudul: "Scope",
     lingkup: [
       "Earthquake shaking only. Tsunamis, liquefaction, and landslides are not modelled separately, even though DIBI includes their damage (Palu 2018, for example).",
@@ -87,8 +87,8 @@ const T = {
       {
         judul: "Data limitations",
         isi: [
-          "DIBI only lists districts that reported damage, and some damage may go unreported. We treat districts that were shaken but not listed as undamaged.",
-          "Event times in DIBI are often default values, so we use the date only.",
+          "DIBI only lists districts that reported damage, and some damage may go unreported. Districts that were shaken but not listed are treated as undamaged.",
+          "Event times in DIBI are often default values, so only the date is used.",
           "Damage may be double counted in earthquake sequences: in North Lombok in 2018 the number of damaged houses exceeds the estimated number of households by a factor of 1.34.",
           "Damage categories are not always filled in; some large events report zero moderately damaged houses (Padang 2009, for example).",
           "The USGS catalogue misses small local earthquakes (below M 4), magnitude types are not harmonised, and the completeness of M ≥ 5 events in the 1970s has not been checked.",
@@ -122,19 +122,19 @@ const T = {
     ],
     versiJudul: "Version history of the analysis",
     versiKet:
-      "The test data were used for three versions of the model. Each change was decided on scientific grounds written down before the next version was tested, and each change lowered our index's results. The model was frozen at version 3. The test data were used once more to evaluate the OJK zone benchmark, without changing the model.",
+      "The test data were used for three versions of the model. Each change was decided on scientific grounds written down before the next version was tested, and each change lowered the NB-EAD index's results. The model was frozen at version 3. The test data were used once more to evaluate the OJK zone benchmark, without changing the model.",
     versi: [
       ["Shaking history", "2008-2019, all events", "1973-2019, main shocks", "1973-2019, main shocks"],
       ["Weights for heavy / moderate / light damage", "1 / 0.5 / 0.25", "1 / 0.5 / 0.25", "0.70 / 0.30 / 0.05"],
-      ["Rank correlation of our index", "0.297", "0.270", "0.252"],
-      ["AUC of our index", "0.678", "0.658", "0.647"],
+      ["Rank correlation of the NB-EAD index", "0.297", "0.270", "0.252"],
+      ["AUC of the NB-EAD index", "0.678", "0.658", "0.647"],
     ],
     versiKolom: ["", "Version 1", "Version 2", "Version 3 (main)"],
     terbukaJudul: "Transparency notes",
     terbuka: [
       ["The aim was reframed after seeing the results.", " The original plan was to show that data-driven weights beat simple ones. Because that held only partly, the main contribution became the testing framework and what it reveals about existing indices. The original hypothesis is still reported with its result."],
       ["Use of AI.", " An AI assistant (Claude, Anthropic) helped with the literature search, coding, and drafting. Every number comes from scripts rerun from scratch, and the author is responsible for the content."],
-      ["Literature.", " The search covered OpenAlex only, limited to open-access articles from 2024-2026. Any claim to be \"first\" means \"first that we found\"."],
+      ["Literature.", " The search covered OpenAlex only, limited to open-access articles from 2024-2026. Any claim to be \"first\" means \"first that the author found\"."],
       ["Not done yet:", " REDCap zoning, testing with several cut-off years, building-level exposure data, and insurance claims data."],
     ],
   },

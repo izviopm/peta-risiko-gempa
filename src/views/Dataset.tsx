@@ -8,7 +8,7 @@ const T: Record<Lang, { label: string; judul: string; pengantar: string; sumber:
     label: "Tentang",
     judul: "Dataset",
     pengantar:
-      "Semua data berasal dari sumber publik. Situs ini hanya menampilkan hasil olahan kami (skor risiko, zona, dan perbandingannya) serta batas wilayah yang disederhanakan. Data mentahnya tidak kami sebarkan ulang. Tautan dan cara mengambilnya ada di bawah.",
+      "Semua data berasal dari sumber publik. Situs ini hanya menampilkan hasil olahan penelitian ini (skor risiko, zona, dan perbandingannya) serta batas wilayah yang disederhanakan. Data mentahnya tidak disebarkan ulang. Tautan dan cara mengambilnya ada di bawah.",
     sumber: "Sumber data",
     kol: ["Periode", "Jumlah", "Dipakai untuk", "Cara ambil", "Dibagikan?"],
     akses: "Data versi penelitian diakses atau diunduh 30–31 Oktober 2026.",
@@ -37,19 +37,19 @@ const T: Record<Lang, { label: string; judul: string; pengantar: string; sumber:
     label: "About",
     judul: "Data",
     pengantar:
-      "All data come from public sources. This site only shows our derived results (risk scores, zones, and comparisons) and simplified district boundaries. We do not redistribute the raw data; links and instructions for getting them are below.",
+      "All data come from public sources. This site only shows the derived results of this study (risk scores, zones, and comparisons) and simplified district boundaries. The raw data are not redistributed here; links and instructions for getting them are below.",
     sumber: "Data sources",
     kol: ["Period", "Size", "Used for", "How to get it", "Shared here?"],
     akses: "The research version of the data was accessed or downloaded on 30-31 October 2026.",
     data: [
-      { nama: "Indonesian Disaster Information Data (DIBI)", penyedia: "BNPB", url: "https://dibi.bnpb.go.id", periode: "2008-2026", jumlah: "725 records, 243 districts, 32 provinces", guna: "Counts of heavily, moderately, and lightly damaged houses per event and district. This is what we try to predict.", ambil: "Manual CSV export from the Tabular tab, filtered to Category = Earthquake and Is Disaster = TRUE (30 Oct 2026).", sebar: "No. Get it from the DIBI portal, which is updated continuously." },
+      { nama: "Indonesian Disaster Information Data (DIBI)", penyedia: "BNPB", url: "https://dibi.bnpb.go.id", periode: "2008-2026", jumlah: "725 records, 243 districts, 32 provinces", guna: "Counts of heavily, moderately, and lightly damaged houses per event and district. This is what the index tries to predict.", ambil: "Manual CSV export from the Tabular tab, filtered to Category = Earthquake and Is Disaster = TRUE (30 Oct 2026).", sebar: "No. Get it from the DIBI portal, which is updated continuously." },
       { nama: "USGS earthquake catalogue (ComCat)", penyedia: "U.S. Geological Survey", url: "https://earthquake.usgs.gov/fdsnws/event/1/", periode: "M ≥ 4: 2008-2026 · M ≥ 5: 1973-2026", jumlah: "36,870 events M ≥ 4 · 12,727 events M ≥ 5 (6,596 main shocks)", guna: "Matching damage to earthquakes and building the shaking history, covering 11°S-6°N, 95-141°E.", ambil: "Downloaded automatically through the API.", sebar: "No. The data are public domain, but easy to download again and sometimes revised by USGS." },
       { nama: "District boundaries", penyedia: "geoBoundaries (source: BPS/OCHA, 2020)", url: "https://www.geoboundaries.org", periode: "2020", jumlah: "514 districts", guna: "The spatial unit, distance to earthquakes, and area.", ambil: "Downloaded automatically.", sebar: "Yes, a simplified version (about 1 km) for the map on this site, with attribution under CC BY 4.0." },
       { nama: "BPS WebAPI (variables 619 and 621)", penyedia: "Statistics Indonesia (BPS)", url: "https://webapi.bps.go.id", periode: "2004-2025", jumlah: "514 districts", guna: "Poverty rate as a measure of vulnerability. Population is derived as the number of poor people divided by the poverty rate.", ambil: "Through the API with a free key (requires a BPS account).", sebar: "No. Use the official BPS API." },
       { nama: "Indonesian Disaster Risk Index (IRBI) 2024", penyedia: "BNPB", url: "https://inarisk.bnpb.go.id", periode: "2024", jumlah: "514 earthquake scores (512 used)", guna: "Benchmark: the official earthquake risk score per district, pages 226-243.", ambil: "PDF from the InaRISK Downloads menu; the table is read with a script.", sebar: "Not the PDF. The scores appear on the map as a benchmark, with the source cited." },
       { nama: "OJK Circular No. 6/SEOJK.05/2017, Appendix III Table III.D", penyedia: "Financial Services Authority (OJK)", url: "https://ojk.go.id", periode: "2017 (still in force)", jumlah: "511 districts with earthquake zones I-V", guna: "Benchmark and agreement analysis of tariff zones.", ambil: "Appendix downloaded from the OJK regulations page; the table is read with a script.", sebar: "Not the document. The zones appear on the map, with the source cited." },
     ],
-    dikeluarkanJudul: "Data we reduced or left out",
+    dikeluarkanJudul: "Data reduced or left out",
     kolKeluar: ["Excluded", "Amount", "Reason"],
     dikeluarkan: [
       ["DIBI records with no matching earthquake", "20 of 725", "No USGS earthquake within 300 km in the date window"],

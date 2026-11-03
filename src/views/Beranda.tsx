@@ -10,9 +10,9 @@ const T = {
   id: {
     pil: "Penelitian · 100% data publik · November 2026",
     judul: "Apakah indeks risiko gempa menunjuk daerah yang rumahnya kemudian rusak?",
-    sub: "Kami menguji 512 kabupaten/kota pada kerusakan rumah 2020–2026.",
+    sub: "512 kabupaten/kota diuji pada kerusakan rumah 2020–2026.",
     intro:
-      "Kami menyusun skor risiko gempa tiap kabupaten/kota hanya dari data sampai 2019. Skor itu lalu dicocokkan dengan rumah yang benar-benar rusak akibat gempa pada 2020–2026, dan dibandingkan dengan IRBI 2024 dari BNPB, zona tarif gempa OJK 2017, serta tiga cara pembobotan lain.",
+      "Penelitian ini menyusun skor risiko gempa tiap kabupaten/kota hanya dari data sampai 2019. Skor itu lalu dicocokkan dengan rumah yang benar-benar rusak akibat gempa pada 2020–2026, dan dibandingkan dengan IRBI 2024 dari BNPB, zona tarif gempa OJK 2017, serta tiga cara pembobotan lain.",
     penulis: "Izvio Prijaya Mumin · Divisi IT, PT Reasuransi MAIPARK Indonesia",
     bukaPeta: "Buka peta",
     caraKerja: "Cara penelitiannya",
@@ -23,7 +23,7 @@ const T = {
       { nilai: "152", label: "Kabupaten/kota yang rusak", ket: "2020–2026, dipakai untuk menguji" },
     ],
     cincinLabel: "skor AUC",
-    cincinJudul: "Seberapa tepat indeks kami",
+    cincinJudul: "Seberapa tepat indeks NB-EAD",
     cincinIsi: (sp: string) =>
       `AUC menunjukkan seberapa sering indeks memberi skor lebih tinggi pada daerah yang rusak dibanding yang tidak. 0,5 berarti sama dengan tebakan acak, 1 berarti selalu benar. Korelasi peringkat (Spearman): ${sp}.`,
     lihatUji: "Lihat hasil uji",
@@ -39,9 +39,9 @@ const T = {
     temuanJudul: "Temuan utama",
     temuan: [
       { judul: "IRBI 2024 kurang cocok untuk memperkirakan rumah rusak", isi: "IRBI adalah indeks perencanaan penanggulangan bencana yang juga menilai kapasitas daerah. IRBI tidak dirancang untuk menebak lokasi rumah yang akan rusak." },
-      { judul: "Indeks kami lebih tepat dari IRBI dan bobot Entropy", isi: "Selisihnya tetap bermakna setelah diuji ulang secara acak 2.000 kali, baik per kabupaten maupun per provinsi, dan pada lima variasi asumsi." },
-      { judul: "Zona tarif OJK cukup membantu", isi: "Zona OJK lebih baik dari tebakan acak. Indeks kami sedikit lebih tepat, tetapi selisihnya hanya bermakna pada uji per kabupaten." },
-      { judul: "Bobot sederhana hampir sama baiknya", isi: "Indeks kami tidak terbukti lebih baik dari bobot setara maupun CRITIC. Yang paling menentukan adalah memilih komponen yang tepat dan mengujinya pada kerusakan nyata." },
+      { judul: "Indeks NB-EAD lebih tepat dari IRBI dan bobot Entropy", isi: "Selisihnya tetap bermakna setelah diuji ulang secara acak 2.000 kali, baik per kabupaten maupun per provinsi, dan pada lima variasi asumsi." },
+      { judul: "Zona tarif OJK cukup membantu", isi: "Zona OJK lebih baik dari tebakan acak. Indeks NB-EAD sedikit lebih tepat, tetapi selisihnya hanya bermakna pada uji per kabupaten." },
+      { judul: "Bobot sederhana hampir sama baiknya", isi: "Indeks NB-EAD tidak terbukti lebih baik dari bobot setara maupun CRITIC. Yang paling menentukan adalah memilih komponen yang tepat dan mengujinya pada kerusakan nyata." },
     ],
     catatan: (ojk: string, setara: string) => `AUC zona OJK ${ojk}; bobot setara ${setara}.`,
     bacaJudul: "Cara membaca",
@@ -53,9 +53,9 @@ const T = {
   en: {
     pil: "Research · public data only · November 2026",
     judul: "Do earthquake risk indices point to the places where houses later get damaged?",
-    sub: "We tested 512 Indonesian districts against housing damage from 2020 to 2026.",
+    sub: "512 Indonesian districts, tested against housing damage from 2020 to 2026.",
     intro:
-      "We built an earthquake risk score for each district using only data up to 2019. We then checked the score against the houses that were actually damaged by earthquakes in 2020 to 2026, and compared it with BNPB's IRBI 2024, the OJK 2017 earthquake tariff zones, and three other weighting methods.",
+      "This study builds an earthquake risk score for each district using only data up to 2019. The score is then checked against the houses that were actually damaged by earthquakes in 2020 to 2026, and compared with BNPB's IRBI 2024, the OJK 2017 earthquake tariff zones, and three other weighting methods.",
     penulis: "Izvio Prijaya Mumin · IT Division, PT Reasuransi MAIPARK Indonesia",
     bukaPeta: "Open the map",
     caraKerja: "How it works",
@@ -66,7 +66,7 @@ const T = {
       { nilai: "152", label: "Districts with damage", ket: "2020-2026, used for testing" },
     ],
     cincinLabel: "AUC score",
-    cincinJudul: "How accurate our index is",
+    cincinJudul: "How accurate the NB-EAD index is",
     cincinIsi: (sp: string) =>
       `AUC is how often the index gives a damaged district a higher score than an undamaged one. 0.5 is a coin flip and 1 is always right. Rank correlation (Spearman): ${sp}.`,
     lihatUji: "See the test",
@@ -82,9 +82,9 @@ const T = {
     temuanJudul: "Main findings",
     temuan: [
       { judul: "IRBI 2024 is a poor guide to where houses get damaged", isi: "IRBI is a disaster planning index that also scores local response capacity. It was not built to predict where houses will be damaged." },
-      { judul: "Our index beats IRBI and Entropy weighting", isi: "The gap holds after 2,000 random resamples, whether we resample districts or whole provinces, and under five alternative assumptions." },
-      { judul: "The OJK tariff zones carry useful information", isi: "The OJK zones do better than chance. Our index is slightly more accurate, but the gap is only significant when we resample districts." },
-      { judul: "Simple weights do almost as well", isi: "Our index is not significantly better than equal weights or CRITIC. Choosing sensible components and testing them on real damage matters more than the weighting method." },
+      { judul: "The NB-EAD index beats IRBI and Entropy weighting", isi: "The gap holds after 2,000 random resamples, whether districts or whole provinces are resampled, and under five alternative assumptions." },
+      { judul: "The OJK tariff zones carry useful information", isi: "The OJK zones do better than chance. The NB-EAD index is slightly more accurate, but the gap is only significant when districts are resampled." },
+      { judul: "Simple weights do almost as well", isi: "The NB-EAD index is not significantly better than equal weights or CRITIC. Choosing sensible components and testing them on real damage matters more than the weighting method." },
     ],
     catatan: (ojk: string, setara: string) => `AUC of the OJK zones: ${ojk}. Equal weights: ${setara}.`,
     bacaJudul: "How to read this",

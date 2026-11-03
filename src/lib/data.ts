@@ -6,7 +6,7 @@ export { f } from "./i18n";
 export const R = ringkasan;
 
 const NAMA: Record<string, Record<Lang, string>> = {
-  "USULAN (NB-EAD)": { id: "Indeks kami (NB-EAD)", en: "Our index (NB-EAD)" },
+  "USULAN (NB-EAD)": { id: "Indeks NB-EAD", en: "NB-EAD index" },
   "IRBI 2024": { id: "IRBI 2024", en: "IRBI 2024" },
   "Zona tarif OJK 2017": { id: "Zona tarif OJK 2017", en: "OJK 2017 tariff zones" },
   "Bobot setara": { id: "Bobot setara", en: "Equal weights" },

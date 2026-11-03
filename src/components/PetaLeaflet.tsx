@@ -46,7 +46,7 @@ const T = {
   id: {
     lapisan: "Lapisan peta",
     lapis: {
-      kelas: { label: "Indeks kami (kelas 1–5)", kiri: "rendah", kanan: "tinggi" },
+      kelas: { label: "Indeks NB-EAD (kelas 1–5)", kiri: "rendah", kanan: "tinggi" },
       ojk_zona: { label: "Zona tarif gempa OJK (I–V)", kiri: "Zona I", kanan: "Zona V" },
       irbi: { label: "IRBI 2024 (kelas 1–5)", kiri: "rendah", kanan: "tinggi" },
       aktual: { label: "Rumah rusak 2020–2026", kiri: "sedikit", kanan: "banyak" },
@@ -64,8 +64,8 @@ const T = {
     tidakDinilai: "Tidak dinilai",
     belumRusak: "Belum ada rumah rusak tercatat",
     sejalan: "Sejalan",
-    ojkRendah: "Zona OJK rendah (I–II), skor kami tinggi",
-    ojkTinggi: "Zona OJK tinggi (IV–V), skor kami rendah",
+    ojkRendah: "Zona OJK rendah (I–II), skor NB-EAD tinggi",
+    ojkTinggi: "Zona OJK tinggi (IV–V), skor NB-EAD rendah",
     tabel: "Tabel kabupaten/kota",
     tabelKet: (n: number) => `Diurutkan dari perkiraan kerusakan tertinggi. ${n} baris. Klik baris untuk melihatnya di peta.`,
     saring: "Saring nama atau provinsi",
@@ -85,14 +85,14 @@ const T = {
     penduduk: "Penduduk (perkiraan dari data BPS)",
     miskin: "Penduduk miskin",
     catatanTinggi:
-      "Zona OJK di sini lebih tinggi dari kelas risiko kami. Ini tanda untuk ditinjau, bukan bukti tarifnya terlalu tinggi: skor kami hanya merekam guncangan merusak 1973–2019.",
-    catatanRendah: "Zona OJK di sini lebih rendah dari kelas risiko kami. Ini tanda untuk ditinjau, bukan bukti zonanya salah.",
+      "Zona OJK di sini lebih tinggi dari kelas risiko NB-EAD. Ini tanda untuk ditinjau, bukan bukti tarifnya terlalu tinggi: skor NB-EAD hanya merekam guncangan merusak 1973–2019.",
+    catatanRendah: "Zona OJK di sini lebih rendah dari kelas risiko NB-EAD. Ini tanda untuk ditinjau, bukan bukti zonanya salah.",
     aria: (l: string) => `Peta: ${l}`,
   },
   en: {
     lapisan: "Map layer",
     lapis: {
-      kelas: { label: "Our index (class 1-5)", kiri: "low", kanan: "high" },
+      kelas: { label: "NB-EAD index (class 1-5)", kiri: "low", kanan: "high" },
       ojk_zona: { label: "OJK earthquake tariff zone (I-V)", kiri: "Zone I", kanan: "Zone V" },
       irbi: { label: "IRBI 2024 (class 1-5)", kiri: "low", kanan: "high" },
       aktual: { label: "Damaged houses 2020-2026", kiri: "few", kanan: "many" },
@@ -110,8 +110,8 @@ const T = {
     tidakDinilai: "Not scored",
     belumRusak: "No damaged houses recorded",
     sejalan: "In line",
-    ojkRendah: "Low OJK zone (I-II), high score in our index",
-    ojkTinggi: "High OJK zone (IV-V), low score in our index",
+    ojkRendah: "Low OJK zone (I-II), high NB-EAD score",
+    ojkTinggi: "High OJK zone (IV-V), low NB-EAD score",
     tabel: "District table",
     tabelKet: (n: number) => `Sorted by estimated damage, highest first. ${n} rows. Click a row to show it on the map.`,
     saring: "Filter by name or province",
@@ -131,8 +131,8 @@ const T = {
     penduduk: "Population (estimated from BPS data)",
     miskin: "Share of population in poverty",
     catatanTinggi:
-      "The OJK zone here is higher than our risk class. Treat this as a prompt for review. It does not show that the rate is too high, because our score only covers damaging shaking from 1973 to 2019.",
-    catatanRendah: "The OJK zone here is lower than our risk class. Treat this as a prompt for review. It does not show that the zone is wrong.",
+      "The OJK zone here is higher than the NB-EAD risk class. Treat this as a prompt for review. It does not show that the rate is too high, because the NB-EAD score only covers damaging shaking from 1973 to 2019.",
+    catatanRendah: "The OJK zone here is lower than the NB-EAD risk class. Treat this as a prompt for review. It does not show that the zone is wrong.",
     aria: (l: string) => `Map: ${l}`,
   },
 };

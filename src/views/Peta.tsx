@@ -12,7 +12,7 @@ export default function Peta({ lang }: { lang: Lang }) {
       pengantar={
         en ? (
           <p>
-            Pick a layer to compare our risk score with the OJK tariff zones, IRBI 2024, the zoning results, and the houses that were actually damaged in 2020 to
+            Pick a layer to compare the NB-EAD risk score with the OJK tariff zones, IRBI 2024, the zoning results, and the houses that were actually damaged in 2020 to
             2026. Click a district to see its details. The{" "}
             <Link href={`${rute("tentang", lang)}#istilah`} className="link">
               glossary
@@ -21,7 +21,7 @@ export default function Peta({ lang }: { lang: Lang }) {
           </p>
         ) : (
           <p>
-            Pilih lapisan untuk membandingkan skor risiko kami dengan zona tarif OJK, IRBI 2024, hasil pengelompokan zona, dan rumah yang benar-benar rusak pada
+            Pilih lapisan untuk membandingkan skor risiko NB-EAD dengan zona tarif OJK, IRBI 2024, hasil pengelompokan zona, dan rumah yang benar-benar rusak pada
             2020–2026. Klik satu daerah untuk melihat rinciannya. Arti istilahnya ada di{" "}
             <Link href={`${rute("tentang", lang)}#istilah`} className="link">
               daftar istilah

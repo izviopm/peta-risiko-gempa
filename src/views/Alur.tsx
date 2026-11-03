@@ -15,13 +15,13 @@ const T = {
       {
         judul: "Mencocokkan kerusakan dengan gempanya",
         masuk: "725 catatan rumah rusak (DIBI), katalog gempa USGS M ≥ 4, batas kabupaten/kota",
-        isi: "DIBI mencatat rumah rusak per kabupaten dan tanggal, tetapi tidak menyebut gempa mana penyebabnya. Untuk setiap catatan kami mencari gempa USGS dari dua hari sebelum sampai satu hari sesudah tanggal kejadian, dalam jarak 300 km. Bila ada beberapa, dipilih gempa yang guncangannya paling kuat di kabupaten itu, dihitung dari magnitudo dan jaraknya.",
+        isi: "DIBI mencatat rumah rusak per kabupaten dan tanggal, tetapi tidak menyebut gempa mana penyebabnya. Untuk setiap catatan dicari gempa USGS dari dua hari sebelum sampai satu hari sesudah tanggal kejadian, dalam jarak 300 km. Bila ada beberapa, dipilih gempa yang guncangannya paling kuat di kabupaten itu, dihitung dari magnitudo dan jaraknya.",
         keluar: "705 catatan (97%) cocok dengan 330 gempa. Gempa Padang 2009, Lombok 2018, Palu 2018, dan Cianjur 2022 terpasang dengan benar.",
       },
       {
         judul: "Menyusun data gempa × kabupaten",
         masuk: "Hasil langkah 1, data penduduk dan kemiskinan BPS",
-        isi: "DIBI hanya mencatat kabupaten yang rusak. Karena itu kabupaten yang ikut terguncang tetapi tidak tercatat rusak kami tambahkan dengan nilai kerusakan nol. Jumlah rumah rusak diubah ke satuan setara rumah hancur: 0,7 × rusak berat + 0,3 × rusak sedang + 0,05 × rusak ringan.",
+        isi: "DIBI hanya mencatat kabupaten yang rusak. Karena itu kabupaten yang ikut terguncang tetapi tidak tercatat rusak ditambahkan dengan nilai kerusakan nol. Jumlah rumah rusak diubah ke satuan setara rumah hancur: 0,7 × rusak berat + 0,3 × rusak sedang + 0,05 × rusak ringan.",
         keluar: "70.247 pasangan gempa–kabupaten, 560 di antaranya ada rumah rusak. Data 2008–2019 untuk melatih model, 2020–2026 untuk menguji.",
       },
       {
@@ -39,7 +39,7 @@ const T = {
       {
         judul: "Menguji pada kerusakan 2020–2026",
         masuk: "Rumah rusak yang tercatat 2020–2026, lima indeks pembanding",
-        isi: "Skor kami dibandingkan dengan IRBI 2024, zona tarif OJK 2017, dan tiga indeks gabungan (bobot setara, Entropy, CRITIC). Ukurannya: AUC, korelasi peringkat, ketepatan 50 daerah teratas, dan porsi kerusakan yang jatuh di 10% daerah teratas. Selisih antarindeks diuji ulang secara acak 2.000 kali, per kabupaten dan per provinsi.",
+        isi: "Skor NB-EAD dibandingkan dengan IRBI 2024, zona tarif OJK 2017, dan tiga indeks gabungan (bobot setara, Entropy, CRITIC). Ukurannya: AUC, korelasi peringkat, ketepatan 50 daerah teratas, dan porsi kerusakan yang jatuh di 10% daerah teratas. Selisih antarindeks diuji ulang secara acak 2.000 kali, per kabupaten dan per provinsi.",
         keluar: "Lebih tepat dari IRBI dan Entropy, sedikit lebih tepat dari zona OJK, dan setara dengan bobot sederhana.",
       },
       {
@@ -50,9 +50,9 @@ const T = {
       },
       {
         judul: "Membandingkan dengan zona tarif OJK",
-        masuk: "Kelas risiko 1–5 kami, zona OJK I–V",
-        isi: "Kami mengukur seberapa sejalan kelas risiko kami dengan zona OJK (Cohen's kappa berbobot), lalu mencatat daerah yang selisihnya besar.",
-        keluar: "Kesesuaian sedang (κ = 0,60). 3 daerah zona OJK-nya lebih rendah dari skor kami, 52 lebih tinggi.",
+        masuk: "Kelas risiko NB-EAD 1–5, zona OJK I–V",
+        isi: "Kesesuaian kelas risiko NB-EAD dengan zona OJK diukur dengan Cohen's kappa berbobot, lalu daerah yang selisihnya besar dicatat.",
+        keluar: "Kesesuaian sedang (κ = 0,60). 3 daerah zona OJK-nya lebih rendah dari skor NB-EAD, 52 lebih tinggi.",
       },
     ],
     waktuJudul: "Data masa depan tidak bocor ke model",
@@ -75,7 +75,7 @@ const T = {
     label: "About",
     judul: "How it works",
     pengantar:
-      "Seven steps take us from raw damage records to the comparison with OJK tariff zones. Each step is a Python script that can be rerun from scratch, and every number on this site comes from those scripts.",
+      "Seven steps lead from raw damage records to the comparison with OJK tariff zones. Each step is a Python script that can be rerun from scratch, and every number on this site comes from those scripts.",
     tujuh: "Seven steps",
     masukan: "Input",
     keluaran: "Output",
@@ -83,44 +83,44 @@ const T = {
       {
         judul: "Match each damage record to its earthquake",
         masuk: "725 housing damage records (DIBI), USGS catalogue M ≥ 4, district boundaries",
-        isi: "DIBI records damaged houses by district and date, but not which earthquake caused them. For each record we look for USGS earthquakes from two days before to one day after the reported date, within 300 km. If there are several, we take the one that shook the district hardest, judged by magnitude and distance.",
+        isi: "DIBI records damaged houses by district and date, but not which earthquake caused them. For each record, the matching looks for USGS earthquakes from two days before to one day after the reported date, within 300 km. If there are several, the one that shook the district hardest, judged by magnitude and distance, is chosen.",
         keluar: "705 records (97%) matched to 330 earthquakes. Padang 2009, Lombok 2018, Palu 2018, and Cianjur 2022 all matched correctly.",
       },
       {
         judul: "Build the earthquake × district dataset",
         masuk: "Output of step 1, BPS population and poverty data",
-        isi: "DIBI only lists districts that reported damage, so we add the districts that were shaken but reported none, with zero damage. Damage is converted to destroyed-house equivalents: 0.7 × heavy + 0.3 × moderate + 0.05 × light.",
+        isi: "DIBI only lists districts that reported damage, so the districts that were shaken but reported none are added with zero damage. Damage is converted to destroyed-house equivalents: 0.7 × heavy + 0.3 × moderate + 0.05 × light.",
         keluar: "70,247 earthquake-district pairs, 560 of them with damage. 2008-2019 is used for training and 2020-2026 for testing.",
       },
       {
         judul: "Estimate the weight of each factor",
         masuk: "Training data, 2008-2019",
-        isi: "About 99% of pairs have no damage, while a few have thousands of damaged houses. A Negative Binomial model, a standard model for count data, handles this well. It tells us how much magnitude, distance, depth, population, density, and poverty each matter. An XGBoost model serves as a benchmark.",
+        isi: "About 99% of pairs have no damage, while a few have thousands of damaged houses. A Negative Binomial model, a standard model for count data, handles this well. It shows how much magnitude, distance, depth, population, density, and poverty each matter. An XGBoost model serves as a benchmark.",
         keluar: "Magnitude, distance, and population matter most. On the test data the pair-level AUC is 0.965 (XGBoost: 0.939).",
       },
       {
         judul: "Score every district",
         masuk: "The model from step 3, USGS catalogue M ≥ 5 for 1973-2019",
-        isi: "We first remove aftershocks so one earthquake sequence is not counted several times. For each district, the expected damage from every main shock over 47 years is added up and divided by 47. The estimate for a single earthquake is capped at the number of houses in the district (population ÷ 4).",
+        isi: "Aftershocks are removed first so one earthquake sequence is not counted several times. For each district, the expected damage from every main shock over 47 years is added up and divided by 47. The estimate for a single earthquake is capped at the number of houses in the district (population ÷ 4).",
         keluar: "Expected damage per year for 512 districts, using information up to 2019 only.",
       },
       {
         judul: "Test against damage in 2020-2026",
         masuk: "Houses damaged in 2020-2026, five benchmark indices",
-        isi: "We compare our score with IRBI 2024, the OJK 2017 tariff zones, and three composite indices (equal weights, Entropy, CRITIC). The measures are AUC, rank correlation, precision in the top 50 districts, and the share of damage that falls in the top 10% of districts. Differences are checked with 2,000 random resamples, by district and by province.",
+        isi: "The NB-EAD score is compared with IRBI 2024, the OJK 2017 tariff zones, and three composite indices (equal weights, Entropy, CRITIC). The measures are AUC, rank correlation, precision in the top 50 districts, and the share of damage that falls in the top 10% of districts. Differences are checked with 2,000 random resamples, by district and by province.",
         keluar: "More accurate than IRBI and Entropy, slightly more accurate than the OJK zones, and on par with simple weights.",
       },
       {
         judul: "Group districts into five zones",
         masuk: "Risk score and shaking intensity",
-        isi: "Districts are grouped into five zones, the same number as the OJK zones. SKATER forces every zone to be one connected area, while K-Means lets zones scatter. We then compare the two.",
+        isi: "Districts are grouped into five zones, the same number as the OJK zones. SKATER forces every zone to be one connected area, while K-Means lets zones scatter. The two are then compared.",
         keluar: "The SKATER zones are connected, but the districts inside them are far less alike (R² 0.565 vs 0.876).",
       },
       {
         judul: "Compare with the OJK tariff zones",
-        masuk: "Our risk classes 1-5, OJK zones I-V",
-        isi: "We measure how well our classes agree with the OJK zones (weighted Cohen's kappa) and list the districts where they differ most.",
-        keluar: "Moderate agreement (κ = 0.60). In 3 districts the OJK zone is lower than our score suggests, and in 52 it is higher.",
+        masuk: "NB-EAD risk classes 1-5, OJK zones I-V",
+        isi: "Agreement between the NB-EAD classes and the OJK zones is measured with weighted Cohen's kappa, and the districts where they differ most are listed.",
+        keluar: "Moderate agreement (κ = 0.60). In 3 districts the OJK zone is lower than the NB-EAD score suggests, and in 52 it is higher.",
       },
     ],
     waktuJudul: "No future data leaks into the model",
@@ -130,7 +130,7 @@ const T = {
       ["Testing", "2020-2026", "Damage the model has never seen."],
     ],
     waktuCatatan:
-      "BPS regional GDP data only cover 2022-2025, so we left them out to keep future information out of training. IRBI 2024 was compiled with information up to 2024, which gives it an advantage in this comparison.",
+      "BPS regional GDP data only cover 2022-2025, so they were left out to keep future information out of training. IRBI 2024 was compiled with information up to 2024, which gives it an advantage in this comparison.",
     bisnisJudul: "Why it matters for reinsurance",
     bisnis: [
       ["Tracking accumulation", "A reinsurer needs to know where earthquake risk from many policies piles up. A district score helps flag places with a history of heavy damage."],
