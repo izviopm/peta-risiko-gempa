@@ -1,9 +1,10 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
+import type { Lang } from "@/lib/i18n";
 import { useGelap } from "@/lib/tema";
 
-export default function TemaToggle() {
+export default function TemaToggle({ lang }: { lang: Lang }) {
   const gelap = useGelap();
 
   function ganti() {
@@ -21,8 +22,8 @@ export default function TemaToggle() {
       type="button"
       className="btn btn-ghost btn-circle"
       onClick={ganti}
-      aria-label={gelap ? "Aktifkan tema terang" : "Aktifkan tema gelap"}
-      title={gelap ? "Tema terang" : "Tema gelap"}
+      aria-label={lang === "en" ? (gelap ? "Switch to light theme" : "Switch to dark theme") : gelap ? "Aktifkan tema terang" : "Aktifkan tema gelap"}
+      title={lang === "en" ? (gelap ? "Light theme" : "Dark theme") : gelap ? "Tema terang" : "Tema gelap"}
     >
       {gelap ? <Sun className="size-5" aria-hidden /> : <Moon className="size-5" aria-hidden />}
     </button>

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
-const id = (n: number, d = 3) => n.toLocaleString("id-ID", { minimumFractionDigits: d, maximumFractionDigits: d });
+import { f, type Lang } from "@/lib/i18n";
 const pos = (v: number, [a, b]: [number, number]) => `${((v - a) / (b - a)) * 100}%`;
 
 /** Dot plot satu seri: titik per indeks, garis acuan (0 atau 0,5). */
@@ -12,13 +11,16 @@ export function DotPlot({
   domain,
   acuan,
   acuanLabel,
+  lang,
 }: {
   judul: string;
   baris: { label: string; nilai: number; sorot?: boolean }[];
   domain: [number, number];
   acuan: number;
   acuanLabel: string;
+  lang: Lang;
 }) {
+  const id = (n: number, d = 3) => f(n, d, lang);
   return (
     <figure className="rounded-[1.25rem] bg-base-200/60 p-5">
       <figcaption className="font-medium">{judul}</figcaption>
@@ -63,11 +65,15 @@ export function Forest({
   judul,
   baris,
   domain,
+  lang,
 }: {
   judul: string;
   baris: { grup: string; skema: string; est: number; lo: number; hi: number; sig: boolean }[];
   domain: [number, number];
+  lang: Lang;
 }) {
+  const id = (n: number, d = 3) => f(n, d, lang);
+  const en = lang === "en";
   return (
     <figure className="rounded-[1.25rem] bg-base-200/60 p-5">
       <figcaption className="font-medium">{judul}</figcaption>
@@ -85,7 +91,7 @@ export function Forest({
                 className="group absolute top-1/2 grid h-6 w-6 -translate-x-1/2 -translate-y-1/2 place-items-center"
                 style={{ left: pos(b.est, domain) }}
                 tabIndex={0}
-                aria-label={`${b.grup}, ${b.skema}: ${id(b.est)} (${id(b.lo)} sampai ${id(b.hi)})`}
+                aria-label={`${b.grup}, ${b.skema}: ${id(b.est)} (${id(b.lo)} ${en ? "to" : "sampai"} ${id(b.hi)})`}
               >
                 <span className={`block h-3 w-3 rounded-full ring-2 ring-[var(--viz-surface)] ${b.sig ? "bg-[var(--viz-1)]" : "border-2 border-[var(--viz-1)] bg-[var(--viz-surface)]"}`} />
                 <span className="pointer-events-none absolute bottom-full mb-1 hidden whitespace-nowrap rounded bg-neutral px-2 py-1 text-xs text-neutral-content group-hover:block group-focus:block">
@@ -103,19 +109,21 @@ export function Forest({
           <span />
           <div className="relative h-4">
             <span className="absolute -translate-x-1/2" style={{ left: pos(0, domain) }}>
-              0 (tidak ada selisih)
+              {en ? "0 (no difference)" : "0 (tidak ada selisih)"}
             </span>
           </div>
         </div>
-        <p className="mt-3 text-xs text-base-content/60">Titik penuh dan * = IK 95% tidak mencakup 0. Titik kosong = tidak signifikan.</p>
+        <p className="mt-3 text-xs text-base-content/60">{en ? "Filled dot and * = the 95% range does not include 0 (a real difference). Hollow dot = not significant." : "Titik penuh dan * = rentang keyakinan 95% tidak menyentuh 0 (selisihnya bermakna). Titik kosong = tidak bermakna."}</p>
       </div>
     </figure>
   );
 }
 
 /** Garis R² antar-zona terhadap k untuk SKATER dan K-Means. */
-export function GarisK({ data }: { data: { k: number; R2_skater: number; R2_kmeans: number }[] }) {
+export function GarisK({ data, lang }: { data: { k: number; R2_skater: number; R2_kmeans: number }[]; lang: Lang }) {
   const [aktif, setAktif] = useState<number | null>(null);
+  const id = (n: number, d = 3) => f(n, d, lang);
+  const en = lang === "en";
   const W = 560,
     H = 260,
     m = { l: 44, r: 84, t: 12, b: 36 };
@@ -130,7 +138,7 @@ export function GarisK({ data }: { data: { k: number; R2_skater: number; R2_kmea
   const a = aktif == null ? null : data[aktif];
   return (
     <figure className="rounded-[1.25rem] bg-base-200/60 p-5">
-      <figcaption className="font-medium">Homogenitas zona (R² antar-zona) menurut jumlah zona k</figcaption>
+      <figcaption className="font-medium">{en ? "How similar districts within a zone are (R²), by number of zones" : "Seberapa mirip daerah dalam satu zona (R²), menurut jumlah zona"}</figcaption>
       <div className="mt-2 flex gap-4 text-sm">
         {seri.map((s) => (
           <span key={s.key} className="flex items-center gap-2">
@@ -140,7 +148,7 @@ export function GarisK({ data }: { data: { k: number; R2_skater: number; R2_kmea
         ))}
       </div>
       <div className="relative">
-        <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 w-full" role="img" aria-label="R² antar-zona SKATER dan K-Means untuk k 5 sampai 40" onMouseLeave={() => setAktif(null)}>
+        <svg viewBox={`0 0 ${W} ${H}`} className="mt-2 w-full" role="img" aria-label={en ? "Between-zone R² for SKATER and K-Means, 5 to 40 zones" : "R² antar-zona SKATER dan K-Means untuk 5 sampai 40 zona"} onMouseLeave={() => setAktif(null)}>
           {[0.5, 0.6, 0.7, 0.8, 0.9, 1].map((t) => (
             <g key={t}>
               <line x1={m.l} x2={W - m.r} y1={y(t)} y2={y(t)} stroke="var(--viz-grid)" />
@@ -155,7 +163,7 @@ export function GarisK({ data }: { data: { k: number; R2_skater: number; R2_kmea
             </text>
           ))}
           <text x={(W - m.r + m.l) / 2} y={H - 4} textAnchor="middle" fontSize="11" fill="var(--viz-muted)">
-            jumlah zona k
+            {en ? "number of zones" : "jumlah zona"}
           </text>
           {a && <line x1={x(a.k)} x2={x(a.k)} y1={m.t} y2={H - m.b} stroke="var(--viz-axis)" />}
           {seri.map((s) => (
@@ -175,7 +183,7 @@ export function GarisK({ data }: { data: { k: number; R2_skater: number; R2_kmea
         </svg>
         {a && (
           <div className="pointer-events-none absolute top-2 rounded bg-neutral px-2 py-1 text-xs text-neutral-content" style={{ left: `${(x(a.k) / W) * 100}%`, transform: "translateX(-50%)" }}>
-            k = {a.k}: K-Means {id(a.R2_kmeans)} · SKATER {id(a.R2_skater)}
+            {a.k} {en ? "zones" : "zona"}: K-Means {id(a.R2_kmeans)} · SKATER {id(a.R2_skater)}
           </div>
         )}
       </div>

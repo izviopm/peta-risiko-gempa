@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  // Dua root layout (id & en) butuh 404 global sendiri.
+  experimental: { globalNotFound: true },
   // Halaman lama dipindah ke bawah /tentang (3 Nov 2026). "/data" persis saja, agar /data/*.json tetap jalan.
   async redirects() {
     return [

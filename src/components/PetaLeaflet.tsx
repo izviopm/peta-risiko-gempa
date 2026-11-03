@@ -4,6 +4,7 @@ import L from "leaflet";
 import { Search } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { f, type Lang } from "@/lib/i18n";
 import { useGelap } from "@/lib/tema";
 
 type Prop = {
@@ -24,6 +25,7 @@ type Prop = {
   p0: number | null;
 };
 type FC = GeoJSON.FeatureCollection<GeoJSON.MultiPolygon | GeoJSON.Polygon, Prop>;
+type Mode = "terang" | "gelap";
 
 // Ramp biru ai ordinal (dari token primary): terang -> gelap pada mode terang, sebaliknya pada mode gelap.
 const RAMP = {
@@ -37,19 +39,105 @@ const BANDING = {
   gelap: { sesuai: "#3a4d63", terlalu_rendah: "#f9b77a", terlalu_tinggi: "#8db4dc" },
 };
 
-const LAPIS = {
-  kelas: { label: "Indeks usulan (kuintil EAD)", kiri: "rendah", kanan: "tinggi" },
-  ojk_zona: { label: "Zona tarif gempa OJK 2017 (I–V)", kiri: "Zona I", kanan: "Zona V" },
-  irbi: { label: "IRBI 2024 gempa (kuintil skor)", kiri: "rendah", kanan: "tinggi" },
-  aktual: { label: "Kerusakan aktual 2020–2026 (kuintil)", kiri: "sedikit", kanan: "banyak" },
-  skater: { label: "Zonasi SKATER k = 5 (kontigu)", kiri: "zona 1", kanan: "zona 5" },
-  kmeans: { label: "Zonasi K-Means k = 5", kiri: "zona 1", kanan: "zona 5" },
-  ojk_banding: { label: "Kesesuaian indeks dengan zona OJK", kiri: "", kanan: "" },
-} as const;
-type Lapis = keyof typeof LAPIS;
+const LAPIS_KUNCI = ["kelas", "ojk_zona", "irbi", "aktual", "skater", "kmeans", "ojk_banding"] as const;
+type Lapis = (typeof LAPIS_KUNCI)[number];
+
+const T = {
+  id: {
+    lapisan: "Lapisan peta",
+    lapis: {
+      kelas: { label: "Indeks kami (kelas 1–5)", kiri: "rendah", kanan: "tinggi" },
+      ojk_zona: { label: "Zona tarif gempa OJK (I–V)", kiri: "Zona I", kanan: "Zona V" },
+      irbi: { label: "IRBI 2024 (kelas 1–5)", kiri: "rendah", kanan: "tinggi" },
+      aktual: { label: "Rumah rusak 2020–2026", kiri: "sedikit", kanan: "banyak" },
+      skater: { label: "Zona menyambung (SKATER)", kiri: "zona 1", kanan: "zona 5" },
+      kmeans: { label: "Zona bebas (K-Means)", kiri: "zona 1", kanan: "zona 5" },
+      ojk_banding: { label: "Beda dengan zona OJK", kiri: "", kanan: "" },
+    },
+    kelasCatatan: "Kelas 1–5: 512 daerah diurutkan menurut skor lalu dibagi lima kelompok sama besar.",
+    cari: "Cari kabupaten/kota",
+    contoh: "contoh: Cianjur",
+    petunjuk: "Klik peta lalu scroll untuk zoom · seret untuk menggeser",
+    memuat: "Memuat peta…",
+    gagal: "Peta gagal dimuat. Coba muat ulang halaman.",
+    kosong: "Klik salah satu kabupaten/kota di peta, atau cari namanya, untuk melihat rinciannya.",
+    tidakDinilai: "Tidak dinilai",
+    belumRusak: "Belum ada rumah rusak tercatat",
+    sejalan: "Sejalan",
+    ojkRendah: "Zona OJK rendah (I–II), skor kami tinggi",
+    ojkTinggi: "Zona OJK tinggi (IV–V), skor kami rendah",
+    tabel: "Tabel kabupaten/kota",
+    tabelKet: (n: number) => `Diurutkan dari perkiraan kerusakan tertinggi. ${n} baris. Klik baris untuk melihatnya di peta.`,
+    saring: "Saring nama atau provinsi",
+    kol: ["Kabupaten/kota", "Provinsi", "Kerusakan/tahun", "Kelas", "Zona OJK", "IRBI", "Rusak 2020–26"],
+    samosir: "Tidak dinilai: tabel IRBI 2024 menulis \"Toba Samosir\" dua kali sehingga Samosir dan Toba Samosir tidak bisa dibedakan.",
+    ead: "Perkiraan kerusakan per tahun",
+    eadSat: "setara rumah hancur",
+    kelasRisiko: "Kelas risiko",
+    tingkat: ["", "rendah", "rendah", "sedang", "tinggi", "tinggi"],
+    ojk: "Zona tarif gempa OJK 2017",
+    induk: " (mengikuti kabupaten induk)",
+    irbi: "Skor IRBI 2024",
+    irbiKelas: { RENDAH: "rendah", SEDANG: "sedang", TINGGI: "tinggi" } as Record<string, string>,
+    zona: "Zona SKATER / K-Means",
+    rusak: "Rumah rusak 2020–2026",
+    rusakSat: "setara rumah hancur",
+    penduduk: "Penduduk (perkiraan dari data BPS)",
+    miskin: "Penduduk miskin",
+    catatanTinggi:
+      "Zona OJK di sini lebih tinggi dari kelas risiko kami. Ini tanda untuk ditinjau, bukan bukti tarifnya terlalu tinggi: skor kami hanya merekam guncangan merusak 1973–2019.",
+    catatanRendah: "Zona OJK di sini lebih rendah dari kelas risiko kami. Ini tanda untuk ditinjau, bukan bukti zonanya salah.",
+    aria: (l: string) => `Peta: ${l}`,
+  },
+  en: {
+    lapisan: "Map layer",
+    lapis: {
+      kelas: { label: "Our index (class 1-5)", kiri: "low", kanan: "high" },
+      ojk_zona: { label: "OJK earthquake tariff zone (I-V)", kiri: "Zone I", kanan: "Zone V" },
+      irbi: { label: "IRBI 2024 (class 1-5)", kiri: "low", kanan: "high" },
+      aktual: { label: "Damaged houses 2020-2026", kiri: "few", kanan: "many" },
+      skater: { label: "Connected zones (SKATER)", kiri: "zone 1", kanan: "zone 5" },
+      kmeans: { label: "Free zones (K-Means)", kiri: "zone 1", kanan: "zone 5" },
+      ojk_banding: { label: "Difference from OJK zones", kiri: "", kanan: "" },
+    },
+    kelasCatatan: "Class 1-5: the 512 districts are sorted by score and split into five equal groups.",
+    cari: "Find a district",
+    contoh: "e.g. Cianjur",
+    petunjuk: "Click the map, then scroll to zoom · drag to pan",
+    memuat: "Loading map…",
+    gagal: "The map failed to load. Try reloading the page.",
+    kosong: "Click a district on the map, or search for it, to see its details.",
+    tidakDinilai: "Not scored",
+    belumRusak: "No damaged houses recorded",
+    sejalan: "In line",
+    ojkRendah: "Low OJK zone (I-II), high score in our index",
+    ojkTinggi: "High OJK zone (IV-V), low score in our index",
+    tabel: "District table",
+    tabelKet: (n: number) => `Sorted by estimated damage, highest first. ${n} rows. Click a row to show it on the map.`,
+    saring: "Filter by name or province",
+    kol: ["District", "Province", "Damage/year", "Class", "OJK zone", "IRBI", "Damaged 2020-26"],
+    samosir: "Not scored: the IRBI 2024 table lists \"Toba Samosir\" twice, so Samosir and Toba Samosir cannot be told apart.",
+    ead: "Estimated damage per year",
+    eadSat: "destroyed-house equivalents",
+    kelasRisiko: "Risk class",
+    tingkat: ["", "low", "low", "medium", "high", "high"],
+    ojk: "OJK 2017 earthquake tariff zone",
+    induk: " (taken from the parent district)",
+    irbi: "IRBI 2024 score",
+    irbiKelas: { RENDAH: "low", SEDANG: "medium", TINGGI: "high" } as Record<string, string>,
+    zona: "SKATER / K-Means zone",
+    rusak: "Damaged houses 2020-2026",
+    rusakSat: "destroyed-house equivalents",
+    penduduk: "Population (estimated from BPS data)",
+    miskin: "Share of population in poverty",
+    catatanTinggi:
+      "The OJK zone here is higher than our risk class. Treat this as a prompt for review. It does not show that the rate is too high, because our score only covers damaging shaking from 1973 to 2019.",
+    catatanRendah: "The OJK zone here is lower than our risk class. Treat this as a prompt for review. It does not show that the zone is wrong.",
+    aria: (l: string) => `Map: ${l}`,
+  },
+};
 
 const ROMAWI = ["", "I", "II", "III", "IV", "V"];
-const id = (n: number, d = 0) => n.toLocaleString("id-ID", { minimumFractionDigits: d, maximumFractionDigits: d });
 
 /** Batas kuintil dari nilai (mengabaikan null). */
 function kuintil(nilai: number[]) {
@@ -58,8 +146,9 @@ function kuintil(nilai: number[]) {
 }
 const kelasDari = (v: number, batas: number[]) => 1 + batas.filter((b) => v > b).length;
 
-
-export default function PetaLeaflet() {
+export default function PetaLeaflet({ lang }: { lang: Lang }) {
+  const t = T[lang];
+  const n = (x: number, d = 0) => f(x, d, lang);
   const wadah = useRef<HTMLDivElement>(null);
   const peta = useRef<L.Map | null>(null);
   const lapisGeo = useRef<L.GeoJSON | null>(null);
@@ -69,7 +158,7 @@ export default function PetaLeaflet() {
   const [pilih, setPilih] = useState<Prop | null>(null);
   const [cari, setCari] = useState("");
   const gelap = useGelap();
-  const mode = gelap ? "gelap" : "terang";
+  const mode: Mode = gelap ? "gelap" : "terang";
 
   useEffect(() => {
     fetch("/data/kabupaten.geojson")
@@ -134,10 +223,8 @@ export default function PetaLeaflet() {
       minZoom: 3,
       maxZoom: 10,
       scrollWheelZoom: false, // aktif setelah peta diklik, agar scroll halaman tidak tersangkut di peta
-      fadeAnimation: true,
-      zoomAnimation: true,
     }).setView([-2.5, 118], 4.75);
-    m.attributionControl.setPrefix(false).addAttribution('Batas wilayah: <a href="https://www.geoboundaries.org">geoBoundaries</a> (CC BY 4.0)');
+    m.attributionControl.setPrefix(false).addAttribution('<a href="https://www.geoboundaries.org">geoBoundaries</a> (CC BY 4.0)');
     m.on("click focus", () => m.scrollWheelZoom.enable());
     m.on("mouseout blur", () => m.scrollWheelZoom.disable());
     peta.current = m;
@@ -169,7 +256,7 @@ export default function PetaLeaflet() {
           click: () => {
             terpilih.current = p.key;
             setPilih(p);
-            lapisGeo.current?.setStyle((f) => gaya.current(f!.properties as Prop));
+            lapisGeo.current?.setStyle((x) => gaya.current(x!.properties as Prop));
           },
           mouseover: (e) => {
             const l = e.target as L.Path;
@@ -185,7 +272,7 @@ export default function PetaLeaflet() {
 
   // Ganti lapisan atau tema: cukup warnai ulang.
   useEffect(() => {
-    lapisGeo.current?.setStyle((f) => gaya.current(f!.properties as Prop));
+    lapisGeo.current?.setStyle((x) => gaya.current(x!.properties as Prop));
   }, [lapis, gelap, batas]);
 
   const fokus = (key: string) => {
@@ -195,7 +282,7 @@ export default function PetaLeaflet() {
       if (ft.properties.key === key) {
         terpilih.current = key;
         setPilih(ft.properties);
-        lapisGeo.current?.setStyle((f) => gaya.current(f!.properties as Prop));
+        lapisGeo.current?.setStyle((x) => gaya.current(x!.properties as Prop));
         peta.current?.flyToBounds((ly as L.Polygon).getBounds(), { maxZoom: 8, duration: 0.8, padding: [24, 24] });
       }
     });
@@ -210,16 +297,16 @@ export default function PetaLeaflet() {
       .sort((a, b) => (b.ead ?? 0) - (a.ead ?? 0));
   }, [data, cari]);
 
-  const info = LAPIS[lapis];
+  const info = t.lapis[lapis];
 
   return (
     <div className="space-y-4">
       <div className="kartu p-4 sm:p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <fieldset>
-            <legend className="mb-2 text-sm font-medium text-base-content/70">Lapisan peta</legend>
+            <legend className="mb-2 text-sm font-medium text-base-content/70">{t.lapisan}</legend>
             <div className="flex flex-wrap gap-2">
-              {(Object.keys(LAPIS) as Lapis[]).map((k) => (
+              {LAPIS_KUNCI.map((k) => (
                 <motion.button
                   key={k}
                   type="button"
@@ -233,18 +320,18 @@ export default function PetaLeaflet() {
                   {lapis === k && (
                     <motion.span layoutId="lapis-aktif" className="absolute inset-0 rounded-full bg-primary" transition={{ type: "spring", stiffness: 420, damping: 34 }} aria-hidden />
                   )}
-                  <span className="relative">{LAPIS[k].label}</span>
+                  <span className="relative">{t.lapis[k].label}</span>
                 </motion.button>
               ))}
             </div>
           </fieldset>
           <label className="w-full shrink-0 lg:w-72">
-            <span className="mb-2 block text-sm font-medium text-base-content/70">Cari kabupaten/kota</span>
+            <span className="mb-2 block text-sm font-medium text-base-content/70">{t.cari}</span>
             <span className="input w-full rounded-full">
               <Search className="size-4 opacity-60" aria-hidden />
               <input
                 list="daftar-kab"
-                placeholder="mis. Cianjur"
+                placeholder={t.contoh}
                 onChange={(e) => {
                   const k = daftar.find((p) => p.nama === e.target.value);
                   if (k) fokus(k.key);
@@ -260,18 +347,22 @@ export default function PetaLeaflet() {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
         <div className="kartu overflow-hidden p-2">
-          <div className="relative overflow-hidden rounded-[1.25rem]">
-            <div ref={wadah} data-lenis-prevent className="h-[460px] w-full sm:h-[600px]" role="region" aria-label={`Peta: ${info.label}`} />
-            {!data && !galat && <div className="absolute inset-0 grid place-items-center text-sm text-base-content/60">Memuat peta…</div>}
-            {galat && <div className="absolute inset-0 grid place-items-center text-sm text-error">Gagal memuat data peta.</div>}
+          {/* isolate: z-index kontrol Leaflet (1000) tidak boleh menembus navbar sticky */}
+          <div className="relative isolate z-0 overflow-hidden rounded-[1.25rem]">
+            <div ref={wadah} data-lenis-prevent className="h-[460px] w-full sm:h-[600px]" role="region" aria-label={t.aria(info.label)} />
+            {!data && !galat && <div className="absolute inset-0 grid place-items-center text-sm text-base-content/60">{t.memuat}</div>}
+            {galat && <div className="absolute inset-0 grid place-items-center text-sm text-error">{t.gagal}</div>}
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-3">
+          <div className="space-y-1.5 px-3 py-3">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div key={lapis} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-                <Legenda lapis={lapis} mode={mode} />
+                <Legenda lapis={lapis} mode={mode} t={t} />
               </motion.div>
             </AnimatePresence>
-            <p className="text-xs text-base-content/60">Klik peta untuk zoom dengan scroll · geser untuk berpindah</p>
+            <p className="text-xs text-base-content/60">
+              {lapis === "kelas" || lapis === "irbi" ? `${t.kelasCatatan} ` : ""}
+              {t.petunjuk}
+            </p>
           </div>
         </div>
 
@@ -286,10 +377,10 @@ export default function PetaLeaflet() {
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             >
               {pilih ? (
-                <Detail p={pilih} />
+                <Detail p={pilih} t={t} n={n} />
               ) : (
                 <div className="grid h-full min-h-48 place-items-center text-center">
-                  <p className="max-w-56 text-sm text-base-content/65">Klik salah satu kabupaten/kota di peta, atau cari namanya, untuk melihat rinciannya.</p>
+                  <p className="max-w-56 text-sm text-base-content/65">{t.kosong}</p>
                 </div>
               )}
             </motion.div>
@@ -300,37 +391,35 @@ export default function PetaLeaflet() {
       <section className="kartu p-5 sm:p-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-xl font-semibold">Tabel kabupaten/kota</h2>
-            <p className="mt-1 text-sm text-base-content/60">Diurutkan menurut EAD. {daftar.length} baris. Klik baris untuk melihat di peta.</p>
+            <h2 className="text-xl font-semibold">{t.tabel}</h2>
+            <p className="mt-1 text-sm text-base-content/60">{t.tabelKet(daftar.length)}</p>
           </div>
           <label className="input w-full rounded-full sm:w-64">
             <Search className="size-4 opacity-60" aria-hidden />
-            <input placeholder="Saring nama atau provinsi" value={cari} onChange={(e) => setCari(e.target.value)} aria-label="Saring tabel" />
+            <input placeholder={t.saring} value={cari} onChange={(e) => setCari(e.target.value)} aria-label={t.saring} />
           </label>
         </div>
         <div data-lenis-prevent className="mt-4 max-h-[480px] overflow-auto overscroll-contain rounded-[1.25rem] border border-base-300">
           <table className="table table-pin-rows table-sm">
             <thead>
               <tr>
-                <th>Kabupaten/kota</th>
-                <th>Provinsi</th>
-                <th className="text-right">EAD</th>
-                <th className="text-right">Kuintil</th>
-                <th className="text-right">Zona OJK</th>
-                <th className="text-right">IRBI</th>
-                <th className="text-right">Rusak 2020–26</th>
+                {t.kol.map((c, i) => (
+                  <th key={c} className={i >= 2 ? "text-right" : ""}>
+                    {c}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="tabular-nums">
               {daftar.map((p) => (
-                <tr key={p.key} className="hover:bg-base-200 cursor-pointer" onClick={() => fokus(p.key)}>
+                <tr key={p.key} className="cursor-pointer hover:bg-base-200" onClick={() => fokus(p.key)}>
                   <td>{p.nama}</td>
                   <td>{p.prov}</td>
-                  <td className="text-right">{id(p.ead!, 1)}</td>
+                  <td className="text-right">{n(p.ead!, 1)}</td>
                   <td className="text-right">{p.kelas}</td>
                   <td className="text-right">{ROMAWI[p.ojk_zona ?? 0]}</td>
-                  <td className="text-right">{p.irbi == null ? "–" : id(p.irbi, 2)}</td>
-                  <td className="text-right">{id(p.aktual ?? 0, 1)}</td>
+                  <td className="text-right">{p.irbi == null ? "–" : n(p.irbi, 2)}</td>
+                  <td className="text-right">{n(p.aktual ?? 0, 1)}</td>
                 </tr>
               ))}
             </tbody>
@@ -341,17 +430,31 @@ export default function PetaLeaflet() {
   );
 }
 
-function Legenda({ lapis, mode }: { lapis: Lapis; mode: "terang" | "gelap" }) {
-  const info = LAPIS[lapis];
+type Teks = (typeof T)["id"] | (typeof T)["en"];
+
+function Legenda({ lapis, mode, t }: { lapis: Lapis; mode: Mode; t: Teks }) {
+  const info = t.lapis[lapis];
   const kotak = (c: string) => <span className="inline-block h-3 w-5 rounded-sm" style={{ background: c }} aria-hidden />;
   if (lapis === "ojk_banding") {
     const b = BANDING[mode];
     return (
-      <div className="flex flex-wrap gap-4 text-sm">
-        <span className="flex items-center gap-2">{kotak(b.sesuai)}Sesuai / selisih kecil</span>
-        <span className="flex items-center gap-2">{kotak(b.terlalu_rendah)}Zona OJK ≤ II, indeks kuintil 4–5</span>
-        <span className="flex items-center gap-2">{kotak(b.terlalu_tinggi)}Zona OJK ≥ IV, indeks kuintil 1–2</span>
-        <span className="flex items-center gap-2">{kotak(KOSONG[mode])}Tidak diindeks</span>
+      <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+        <span className="flex items-center gap-2">
+          {kotak(b.sesuai)}
+          {t.sejalan}
+        </span>
+        <span className="flex items-center gap-2">
+          {kotak(b.terlalu_rendah)}
+          {t.ojkRendah}
+        </span>
+        <span className="flex items-center gap-2">
+          {kotak(b.terlalu_tinggi)}
+          {t.ojkTinggi}
+        </span>
+        <span className="flex items-center gap-2">
+          {kotak(KOSONG[mode])}
+          {t.tidakDinilai}
+        </span>
       </div>
     );
   }
@@ -367,28 +470,28 @@ function Legenda({ lapis, mode }: { lapis: Lapis; mode: "terang" | "gelap" }) {
       </span>
       <span className="flex items-center gap-2">
         {kotak(KOSONG[mode])}
-        {lapis === "aktual" ? "Tidak ada kerusakan tercatat" : "Tidak diindeks"}
+        {lapis === "aktual" ? t.belumRusak : t.tidakDinilai}
       </span>
     </div>
   );
 }
 
-function Detail({ p }: { p: Prop }) {
+function Detail({ p, t, n }: { p: Prop; t: Teks; n: (x: number, d?: number) => string }) {
   if (p.kelas == null)
     return (
       <div>
-        <h2 className="text-lg font-semibold">{p.nama}</h2>
+        <h2 className="text-xl font-semibold">{p.nama}</h2>
         <p className="text-sm text-base-content/60">{p.prov}</p>
-        <p className="mt-3 text-sm">Tidak diindeks: tabel IRBI 2024 mencantumkan &quot;Toba Samosir&quot; dua kali sehingga Samosir dan Toba Samosir tidak dapat dibedakan.</p>
+        <p className="mt-3 text-sm">{t.samosir}</p>
       </div>
     );
   const baris: [string, string][] = [
-    ["Zona tarif gempa OJK 2017", `${ROMAWI[p.ojk_zona ?? 0]}${p.ojk_imputasi ? " (zona kabupaten induk)" : ""}`],
-    ["Skor IRBI 2024 gempa", p.irbi == null ? "–" : `${id(p.irbi, 2)} (${p.irbi_kelas?.toLowerCase()})`],
-    ["Zona SKATER / K-Means", `${p.skater} / ${p.kmeans}`],
-    ["Kerusakan aktual 2020–2026", `${id(p.aktual ?? 0, 2)} rumah ekuivalen`],
-    ["Penduduk (turunan BPS)", id(p.penduduk ?? 0)],
-    ["Penduduk miskin (P0)", `${id(p.p0 ?? 0, 2)}%`],
+    [t.ojk, `${ROMAWI[p.ojk_zona ?? 0]}${p.ojk_imputasi ? t.induk : ""}`],
+    [t.irbi, p.irbi == null ? "–" : `${n(p.irbi, 2)} (${t.irbiKelas[p.irbi_kelas ?? ""] ?? ""})`],
+    [t.zona, `${p.skater} / ${p.kmeans}`],
+    [t.rusak, `${n(p.aktual ?? 0, 2)} ${t.rusakSat}`],
+    [t.penduduk, n(p.penduduk ?? 0)],
+    [t.miskin, `${n(p.p0 ?? 0, 2)}%`],
   ];
   return (
     <div>
@@ -396,14 +499,17 @@ function Detail({ p }: { p: Prop }) {
       <p className="text-sm text-base-content/60">{p.prov}</p>
       <div className="mt-4 grid grid-cols-2 gap-2">
         <div className="rounded-[1.25rem] bg-primary p-4 text-primary-content">
-          <p className="text-xs opacity-85">EAD / tahun</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">{id(p.ead!, 1)}</p>
-          <p className="text-xs opacity-85">rumah ekuivalen</p>
+          <p className="text-xs opacity-85">{t.ead}</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">{n(p.ead!, 1)}</p>
+          <p className="text-xs opacity-85">{t.eadSat}</p>
         </div>
         <div className="rounded-[1.25rem] bg-base-200 p-4">
-          <p className="text-xs text-base-content/65">Kuintil indeks</p>
-          <p className="mt-1 text-2xl font-semibold">{p.kelas}<span className="text-base font-normal text-base-content/60"> / 5</span></p>
-          <p className="text-xs text-base-content/65">{p.kelas! >= 4 ? "tinggi" : p.kelas! <= 2 ? "rendah" : "sedang"}</p>
+          <p className="text-xs text-base-content/65">{t.kelasRisiko}</p>
+          <p className="mt-1 text-2xl font-semibold">
+            {p.kelas}
+            <span className="text-base font-normal text-base-content/60"> / 5</span>
+          </p>
+          <p className="text-xs text-base-content/65">{t.tingkat[p.kelas]}</p>
         </div>
       </div>
       <dl className="mt-5 space-y-3 text-sm">
@@ -415,11 +521,7 @@ function Detail({ p }: { p: Prop }) {
         ))}
       </dl>
       {p.ojk_banding && p.ojk_banding !== "sesuai" && (
-        <p className="mt-4 rounded-[1.25rem] bg-warning p-4 text-xs text-warning-content">
-          {p.ojk_banding === "terlalu_tinggi"
-            ? "Zona OJK lebih tinggi dari kuintil indeks. Ini menandai kabupaten yang layak ditinjau, bukan bukti tarif terlalu tinggi: indeks hanya merekam guncangan merusak 1973–2019."
-            : "Zona OJK lebih rendah dari kuintil indeks. Ini sinyal untuk ditinjau, bukan bukti salah zona."}
-        </p>
+        <p className="mt-4 rounded-[1.25rem] bg-warning p-4 text-xs text-warning-content">{p.ojk_banding === "terlalu_tinggi" ? t.catatanTinggi : t.catatanRendah}</p>
       )}
     </div>
   );
