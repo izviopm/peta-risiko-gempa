@@ -17,7 +17,11 @@ export default function Peta({ lang }: { lang: Lang }) {
             <Link href={`${rute("tentang", lang)}#istilah`} className="link">
               glossary
             </Link>{" "}
-            explains the terms.
+            explains the terms. The scores on this map come from the preliminary analysis (shaking history 1973-2019); the results of paper version 2.0 are on the{" "}
+            <Link href={rute("hasil", lang)} className="link">
+              Results
+            </Link>{" "}
+            page.
           </p>
         ) : (
           <p>
@@ -25,6 +29,10 @@ export default function Peta({ lang }: { lang: Lang }) {
             2020–2026. Klik satu daerah untuk melihat rinciannya. Arti istilahnya ada di{" "}
             <Link href={`${rute("tentang", lang)}#istilah`} className="link">
               daftar istilah
+            </Link>
+            . Skor di peta ini berasal dari analisis pendahuluan (riwayat guncangan 1973–2019); hasil naskah versi 2.0 ada di halaman{" "}
+            <Link href={rute("hasil", lang)} className="link">
+              Hasil
             </Link>
             .
           </p>

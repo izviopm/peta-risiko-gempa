@@ -13,14 +13,14 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 const KAKI = {
   id: {
     judul: "Peta Risiko Gempa Kabupaten/Kota",
-    penulis: "Izvio Prijaya Mumin · Divisi IT, PT Reasuransi MAIPARK Indonesia. Naskah penelitian versi 1.1, November 2026.",
+    penulis: "Izvio Prijaya Mumin · Divisi IT, PT Reasuransi MAIPARK Indonesia. Naskah penelitian versi 2.0, November 2026.",
     sumber:
       "Sumber data: DIBI BNPB, USGS, BPS, geoBoundaries (CC BY 4.0), IRBI 2024 BNPB, dan SEOJK 6/2017. Peta ini membandingkan daerah berdasarkan riwayat kerusakan. Peta ini bukan ramalan gempa dan bukan dasar penetapan tarif.",
     nav: "Navigasi bawah",
   },
   en: {
     judul: "Earthquake Risk Map of Indonesian Districts",
-    penulis: "Izvio Prijaya Mumin · IT Division, PT Reasuransi MAIPARK Indonesia. Research paper version 1.1, November 2026.",
+    penulis: "Izvio Prijaya Mumin · IT Division, PT Reasuransi MAIPARK Indonesia. Research paper version 2.0, November 2026.",
     sumber:
       "Data: DIBI (BNPB), USGS, BPS, geoBoundaries (CC BY 4.0), IRBI 2024 (BNPB), and OJK Circular 6/2017. The map ranks districts by their damage history. It does not forecast earthquakes and is not a basis for setting insurance rates.",
     nav: "Footer navigation",

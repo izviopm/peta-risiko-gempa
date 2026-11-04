@@ -1,327 +1,413 @@
+import type { ReactNode } from "react";
 import { Bagian, Halaman } from "@/components/Halaman";
-import { DotPlot, Forest, GarisK } from "@/components/Grafik";
-import { f, namaIndeks, R, validasi } from "@/lib/data";
+import { DotPlot, Forest } from "@/components/Grafik";
+import { auc, f, namaIndeks, R, USULAN } from "@/lib/data";
 import type { Lang } from "@/lib/i18n";
 
-const PEMBANDING = ["IRBI 2024", "Zona tarif OJK 2017", "Bobot setara", "Entropy", "CRITIC"];
+/** PGA_pw Deli Serdang dari gempa Aceh 2004 (naskah v2 Tabel 9b); dihitung sekali dengan gmpe_v4.py. */
+const DELI = { patahan: 0.527, jalur: 0.096, titik: 0.051 };
+const GEO = ["patahan", "jalur", "titik"] as const;
 
 const T = {
   id: {
     label: "Tentang",
     judul: "Hasil",
-    pengantar: "Semua angka berasal dari model versi 3 yang dibekukan pada 31 Oktober 2026 dan sudah diperiksa dengan menjalankan ulang seluruh skrip dari awal.",
-    fitur: { mag: "Magnitudo", log_hipo: "Jarak ke pusat gempa (log)", log_depth: "Kedalaman gempa (log)", log_penduduk: "Jumlah penduduk (log)", log_kepadatan: "Kepadatan penduduk (log)", p0_miskin: "Persentase penduduk miskin" } as Record<string, string>,
-    skenario: { UTAMA: "Utama", bobot_lama: "Bobot rusak 1 / 0,5 / 0,25", hanya_RB: "Hanya rusak berat", negatif_p25: "Nol hanya di daerah terguncang sedang", negatif_p50: "Nol hanya di daerah terguncang kuat" } as Record<string, string>,
-    s1: "1. Faktor yang menentukan kerusakan",
-    s1Ket: "Hasil model Negative Binomial pada data 2008–2019. Kolom terakhir menunjukkan berapa kali lipat perkiraan kerusakan berubah bila faktor itu naik satu simpangan baku.",
-    kolModel: ["Faktor", "Koefisien", "Galat baku", "p", "Kali lipat per 1 SD"],
-    s1Catatan: (a: string, b: string) =>
-      `Kerusakan naik tajam dengan magnitudo dan turun tajam dengan jarak. Makin banyak penduduk, makin banyak rumah rusak. Pada jumlah penduduk yang sama, daerah yang lebih padat justru lebih sedikit rusak; dugaan bahwa bangunan di kota lebih kokoh belum bisa dibuktikan. Kemiskinan tidak berpengaruh nyata pada model utama. Pada data uji per pasangan gempa–kabupaten 2020–2026, AUC model ini ${a} dan XGBoost ${b}.`,
-    s2: "2. Hasil uji pada kerusakan 2020–2026",
-    s2Ket: "512 kabupaten/kota, 152 di antaranya punya rumah rusak pada periode uji.",
-    aucJudul: "AUC: seberapa baik membedakan daerah rusak dan tidak",
-    aucAcuan: "0,5 = tebakan acak",
-    spJudul: "Korelasi peringkat dengan kerusakan nyata",
-    spAcuan: "0 = tidak berhubungan",
-    kolValidasi: ["Indeks", "Korelasi peringkat", "AUC", "Tepat di 50 teratas", "Porsi kerusakan di 10% teratas"],
-    forestAuc: "Selisih AUC (NB-EAD − pembanding), rentang keyakinan 95%",
-    forestSp: "Selisih korelasi peringkat (NB-EAD − pembanding), rentang keyakinan 95%",
-    skemaKab: "uji ulang per kabupaten",
+    pengantar:
+      "Semua angka berasal dari naskah versi 2.0 (4 November 2026). Aturan analisisnya dikunci lebih dulu dalam pra-registrasi, lalu indeks diuji pada empat periode berturut-turut. Hasil yang kurang menguntungkan tetap ditampilkan.",
+    s1: "1. Uji pada empat periode",
+    s1Ket: (n: string) => `Setiap periode, model dan indeks dibangun ulang hanya dari data sebelum periode ujinya. Jumlah kabupaten/kota yang rusak per periode: ${n}.`,
+    kolAuc: ["Indeks", "2014–16", "2017–19", "2020–22", "2023–26", "Rata-rata", "Korelasi peringkat"],
+    dotJudul: "AUC rata-rata empat periode",
+    dotAcuan: "0,5 = tebakan acak",
+    s1Catatan:
+      "AUC menunjukkan seberapa sering indeks memberi skor lebih tinggi pada daerah yang rusak dibanding yang tidak rusak. IRBI 2024 berada di sekitar tebakan acak di keempat periode. Bobot setara punya rata-rata tertinggi.",
+    s2: "2. Uji hipotesis H1",
+    s2Ket: "Selisih AUC rata-rata (indeks NB-EAD dikurangi pembanding) di empat periode, dengan rentang keyakinan 95% dari 2.000 uji ulang acak dan koreksi Holm untuk tujuh perbandingan.",
+    forest: "Selisih AUC rata-rata, rentang keyakinan 95%",
     skemaProv: "uji ulang per provinsi",
-    s2a: [
-      "Hipotesis H1 terbukti sebagian.",
-      " Indeks NB-EAD lebih tepat dari IRBI 2024 dan bobot Entropy pada kedua cara uji ulang, dan lebih tepat dari zona OJK hanya pada uji ulang per kabupaten. Indeks NB-EAD tidak terbukti lebih baik dari bobot setara maupun CRITIC.",
-    ],
-    s2b:
-      "Porsi kerusakan yang jatuh di 10% daerah teratas indeks NB-EAD (0,030) justru lebih kecil dari beberapa pembanding. Penyebabnya, peringkat teratas diisi daerah dengan riwayat guncangan besar yang kebetulan tidak rusak pada 2020–2026. Sebanyak 62% bobot Entropy jatuh pada komponen bahaya, sehingga bobot yang ditentukan oleh sebaran data belum tentu mengikuti kerusakan.",
-    s3: "3. Uji dengan asumsi berbeda",
-    s3Ket: "Selisih AUC indeks NB-EAD terhadap tiap pembanding pada lima variasi asumsi (* = bermakna pada uji ulang per kabupaten).",
-    kolKetahanan: (p: string) => `vs ${p}`,
-    kolSkenario: ["Skenario", "AUC", "p kemiskinan"],
+    skemaKab: "uji ulang per kabupaten",
+    kolH1: ["Pembanding", "Selisih", "p Holm", "Keputusan", "Versi sumber titik"],
+    keputusan: { Didukung: "Terbukti", Indikatif: "Indikatif", "Tidak didukung": "Tidak terbukti" } as Record<string, string>,
+    s2a: ["H1 hanya terbukti terhadap IRBI 2024.", " Indeks NB-EAD tidak lebih baik dari zona OJK, bobot setara, Entropy, CRITIC, penduduk saja, maupun bahaya saja. Pada uji ulang per kabupaten, bobot setara malah sedikit lebih baik dari indeks NB-EAD."],
+    s2b: "IRBI adalah indeks perencanaan penanggulangan bencana yang juga menilai kapasitas daerah, dan tidak dirancang untuk menebak lokasi rumah rusak. Yang diuji di sini adalah kelayakannya sebagai ukuran potensi kerusakan rumah. Perbandingannya juga menguntungkan IRBI, karena IRBI 2024 disusun dengan informasi sesudah tiga periode uji pertama.",
+    s3: "3. Faktor yang menentukan kerusakan",
+    s3Ket: "Koefisien model Negative Binomial per periode latih (faktor sudah distandarkan; * = bermakna, p < 0,05).",
+    kolKoef: ["Faktor", "Latih s.d. 2013", "s.d. 2016", "s.d. 2019", "s.d. 2022"],
+    faktor: { log_pga: "Guncangan tanah (PGA, log)", log_penduduk: "Jumlah penduduk (log)", log_kepadatan: "Kepadatan penduduk (log)", p0: "Persentase penduduk miskin" } as Record<string, string>,
+    barisModel: ["Pasangan latih (yang rusak)", "Pseudo-R²"],
     s3Catatan:
-      "Kesimpulannya sama di kelima skenario. Saat nilai nol hanya diberikan pada daerah yang terguncang cukup kuat, kemiskinan menjadi berpengaruh nyata (p = 0,027 dan 0,004). Temuan ini masih bersifat penjajakan.",
-    s4: "4. Zona menyambung (SKATER) vs zona bebas (K-Means)",
+      "Guncangan dan jumlah penduduk berpengaruh kuat di semua periode. Pada jumlah penduduk yang sama, daerah yang lebih padat lebih sedikit rusak; dugaan bahwa bangunan kota lebih kokoh belum bisa dibuktikan. Pengaruh kemiskinan berganti arah antarperiode, jadi tidak ada bukti pengaruh yang stabil.",
+    s4: "4. Apakah jumlah kerusakannya tepat? (kalibrasi)",
+    s4Ket: "Kerusakan yang terjadi dibagi kerusakan yang diperkirakan, per kelas risiko (1 = sesuai, di bawah 1 = perkiraan terlalu besar).",
+    kolKal: ["Kelas", "2014–16", "2017–19", "2020–22", "2023–26"],
+    total: "Total diperkirakan / terjadi",
+    s4Catatan:
+      "Jumlah kerusakan yang diperkirakan meleset jauh: periode 2017–2019 terlalu kecil karena memuat gempa Lombok dan Palu 2018, sedangkan dua periode terakhir lebih dari 20 kali terlalu besar. Indeks NB-EAD layak dipakai untuk mengurutkan daerah, tetapi angka rumah rusak per tahunnya belum boleh dibaca sebagai perkiraan kerugian.",
+    s5: "5. Apa yang membuat indeks bekerja (penjajakan)",
+    s5Ket: "AUC rata-rata indeks NB-EAD bila satu pilihan analisis diubah. Bagian ini tidak dipakai untuk menguji ulang H1.",
+    kolEks: ["Variasi", "Patahan (utama)", "Sumber titik", "Jenis gempa dari kedalaman", "Searah palung"],
+    varian: {
+      utama: "Model utama",
+      "ablation: bahaya saja": "Hanya guncangan",
+      "ablation: + penduduk": "Guncangan + penduduk",
+      "ablation: + kepadatan": "Guncangan + penduduk + kepadatan",
+      "model: NB hurdle": "Model hurdle",
+      "bobot 1 / 0,5 / 0,25": "Bobot rusak 1 / 0,5 / 0,25",
+      "hanya rusak berat": "Hanya rusak berat",
+      "tau negatif persentil 25": "Nol hanya di daerah terguncang sedang",
+      "tau negatif persentil 50": "Nol hanya di daerah terguncang kuat",
+      "+ magnitudo": "Ditambah magnitudo",
+    } as Record<string, string>,
+    s5Catatan:
+      "Guncangan dan jumlah penduduk sudah memuat hampir seluruh daya prediksi. Yang paling berpengaruh adalah asumsi daerah mana yang dianggap tidak rusak: bila nol hanya diberikan pada daerah yang terguncang cukup kuat, AUC naik sekitar 0,03. Bentuk model, bobot kerusakan, dan cara menggolongkan jenis gempa hampir tidak berpengaruh.",
+    s6: "6. Guncangan model dibanding ShakeMap, dan masalah patahan",
+    s6Ket: (n: number) => `Untuk ${n} gempa yang punya ShakeMap USGS, guncangan model dibandingkan dengan peta guncangan resmi itu (skala log; bias di atas 0 = model terlalu tinggi, 0,30 ≈ dua kali lipat).`,
+    kolSm: ["Kelompok", "Pasangan", "Korelasi (patahan)", "Bias (patahan)", "Korelasi (titik)", "Bias (titik)"],
+    subset: { semua: "Semua", "ShakeMap dengan observasi": "ShakeMap dengan rekaman/laporan", "kab rusak DIBI": "Kabupaten yang rusak" } as Record<string, string>,
+    s6a:
+      "Guncangan model sangat mirip ShakeMap. Masalahnya ada pada gempa raksasa. Koreksi patahan mengurangi jarak sebesar setengah panjang patahan ke segala arah, padahal patahan gempa subduksi memanjang searah palung laut. Untuk gempa Aceh 2004 (M 9,1), setengah panjangnya sekitar 425 km, sehingga daratan Sumatera Utara dianggap berada di atas patahan. Akibatnya Deli Serdang, Medan, Langkat, dan Simalungun menjadi daerah paling berisiko pada periode terakhir.",
+    kolGeo: ["", "Patahan (utama)", "Searah palung (penjajakan)", "Sumber titik"],
+    barisGeo: ["AUC per periode", "AUC rata-rata", "Selisih dengan bobot setara", "Bias vs ShakeMap, semua gempa", "Bias vs ShakeMap, M ≥ 7,5", "PGA Deli Serdang saat Aceh 2004"],
+    s6b:
+      "Percobaan penjajakan meletakkan patahan gempa subduksi searah palung. Guncangan gempa besar jadi paling dekat dengan ShakeMap dan sebagian besar daya prediksi kembali, tetapi indeks NB-EAD tetap tidak lebih baik dari bobot setara. Karena percobaan ini diputuskan sesudah hasil utama dilihat, angkanya tidak dipakai untuk menguji ulang H1. Versi utama tetap dilaporkan sesuai pra-registrasi.",
+    s7: "7. Zona menyambung (SKATER) vs zona bebas (K-Means)",
+    s7Ket: "Lima zona dari skor risiko dan guncangan periode terakhir (latih s.d. 2022).",
     kolZona: ["Lima zona", "SKATER", "K-Means"],
-    zonaBaris: ["Kemiripan dalam zona (R²)", "Silhouette", "Jumlah bagian terpisah (5 = semua zona menyambung)"],
-    s4a: ["Hipotesis H2 ditolak untuk lima zona.", " Zona SKATER memang menyambung, tetapi kemiripan isinya turun 0,31. Zona rendah SKATER menggabungkan seluruh Jawa, Bali, dan Nusa Tenggara, termasuk Lombok dan Cianjur, padahal zona itu memuat 101 dari 152 daerah yang rusak pada 2020–2026. SKATER baru semirip K-Means lima zona bila zonanya sekitar 30. Lihat lapisan zona di halaman Peta."],
-    s5: "5. Perbandingan dengan zona tarif OJK 2017",
-    silang: "Jumlah kabupaten: kelas risiko NB-EAD × zona OJK",
-    kelas: "Kelas",
-    zona: "Zona",
-    s5a: (k: string, s: string, p: number) => `Kesesuaiannya sedang: kappa berbobot ${k}, korelasi peringkat ${s}, dan kelas yang persis sama di ${p}% kabupaten.`,
-    s5b: "Tiga kabupaten (Kolaka, Muna, Tarakan) ada di zona OJK I–II, padahal skor NB-EAD menempatkannya di dua kelas teratas. Sebaliknya, 52 kabupaten, kebanyakan di pantai utara Jawa dan Jakarta, ada di zona OJK IV–V meskipun skor NB-EAD-nya rendah.",
-    s5c:
-      "Selisih ini tidak berarti tarifnya terlalu tinggi atau terlalu rendah. Skor NB-EAD hanya merekam guncangan merusak selama 47 tahun, sedangkan zona OJK disusun dari peta bahaya yang memperhitungkan kemungkinan gempa besar yang jarang terjadi dan kondisi tanah, misalnya sesar di dekat Jakarta. Selisih ini hanya menandai daerah yang layak ditinjau.",
+    zonaBaris: ["Kemiripan dalam zona (R²)", "Silhouette", "Jumlah bagian terpisah (5 = semua zona menyambung)", "Kemiripan dalam zona, versi sumber titik"],
+    s7a: (a: string, b: string) => [
+      "Hipotesis H2 ditolak.",
+      ` Zona SKATER memang menyambung, tetapi kemiripan isinya turun ${a} (versi sumber titik: ${b}), jauh di atas batas 0,10 yang ditetapkan. Risiko gempa terlalu terlokalisasi untuk dibagi ke lima zona nasional yang wilayahnya harus menyambung.`,
+    ],
   },
   en: {
     label: "About",
     judul: "Results",
-    pengantar: "Every number comes from version 3 of the model, frozen on 31 October 2026 and checked by rerunning all the scripts from scratch.",
-    fitur: { mag: "Magnitude", log_hipo: "Distance to the hypocentre (log)", log_depth: "Earthquake depth (log)", log_penduduk: "Population (log)", log_kepadatan: "Population density (log)", p0_miskin: "Poverty rate" } as Record<string, string>,
-    skenario: { UTAMA: "Main", bobot_lama: "Damage weights 1 / 0.5 / 0.25", hanya_RB: "Heavy damage only", negatif_p25: "Zeros only where shaking was moderate", negatif_p50: "Zeros only where shaking was strong" } as Record<string, string>,
-    s1: "1. What drives damage",
-    s1Ket: "Negative Binomial model fitted on 2008-2019 data. The last column shows how many times the expected damage changes when the factor rises by one standard deviation.",
-    kolModel: ["Factor", "Coefficient", "Std. error", "p", "Change per 1 SD"],
-    s1Catatan: (a: string, b: string) =>
-      `Damage rises steeply with magnitude and falls steeply with distance. More people means more damaged houses. For the same population, denser districts see less damage; better urban buildings could explain this, but this cannot be proven. Poverty has no clear effect in the main model. On the 2020-2026 test pairs, the model reaches an AUC of ${a} and XGBoost ${b}.`,
-    s2: "2. Test against damage in 2020-2026",
-    s2Ket: "512 districts, 152 of which had damaged houses during the test period.",
-    aucJudul: "AUC: how well each index separates damaged from undamaged districts",
-    aucAcuan: "0.5 = coin flip",
-    spJudul: "Rank correlation with actual damage",
-    spAcuan: "0 = no relationship",
-    kolValidasi: ["Index", "Rank correlation", "AUC", "Precision in top 50", "Share of damage in top 10%"],
-    forestAuc: "Difference in AUC (NB-EAD − benchmark), 95% confidence range",
-    forestSp: "Difference in rank correlation (NB-EAD − benchmark), 95% confidence range",
-    skemaKab: "resampled by district",
+    pengantar:
+      "All numbers come from version 2.0 of the paper (4 November 2026). The analysis rules were locked in a preregistration first, and the index was then tested on four consecutive periods. Results that look bad for the index are reported too.",
+    s1: "1. Tests on four periods",
+    s1Ket: (n: string) => `For each period, the model and index are rebuilt from data before that period only. Districts with damage in each test period: ${n}.`,
+    kolAuc: ["Index", "2014-16", "2017-19", "2020-22", "2023-26", "Mean", "Rank correlation"],
+    dotJudul: "Mean AUC over four periods",
+    dotAcuan: "0.5 = coin flip",
+    s1Catatan:
+      "AUC is how often an index gives a damaged district a higher score than an undamaged one. IRBI 2024 sits near a coin flip in all four periods. Equal weights has the highest mean.",
+    s2: "2. Testing hypothesis H1",
+    s2Ket: "Mean AUC difference (NB-EAD index minus benchmark) over the four periods, with 95% confidence ranges from 2,000 random resamples and a Holm correction for the seven comparisons.",
+    forest: "Mean AUC difference, 95% confidence range",
     skemaProv: "resampled by province",
-    s2a: [
-      "Hypothesis H1 is partly supported.",
-      " The NB-EAD index beats IRBI 2024 and Entropy weighting under both resampling schemes, and beats the OJK zones only when districts are resampled. It is not significantly better than equal weights or CRITIC.",
-    ],
-    s2b:
-      "The share of damage that falls in the NB-EAD top 10% of districts (0.030) is lower than for some benchmarks. Its top ranks are filled with districts that have a history of strong shaking but happened to see no damage in 2020-2026. Entropy puts 62% of its weight on the hazard component, which shows that weights set by the spread of the data do not necessarily follow damage.",
-    s3: "3. Tests under different assumptions",
-    s3Ket: "Difference in AUC between the NB-EAD index and each benchmark under five alternative assumptions (* = significant when resampling districts).",
-    kolKetahanan: (p: string) => `vs ${p}`,
-    kolSkenario: ["Scenario", "AUC", "p poverty"],
+    skemaKab: "resampled by district",
+    kolH1: ["Benchmark", "Difference", "Holm p", "Decision", "Point-source version"],
+    keputusan: { Didukung: "Supported", Indikatif: "Indicative", "Tidak didukung": "Not supported" } as Record<string, string>,
+    s2a: ["H1 holds only against IRBI 2024.", " The NB-EAD index is no better than the OJK zones, equal weights, Entropy, CRITIC, population only, or hazard only. When districts are resampled, equal weights comes out slightly ahead of the NB-EAD index."],
+    s2b: "IRBI is a disaster planning index that also scores local capacity, and it was not built to predict where houses get damaged. What is tested here is its use as a measure of housing damage potential. The comparison also favours IRBI, because IRBI 2024 was compiled with information from after the first three test periods.",
+    s3: "3. What drives damage",
+    s3Ket: "Negative Binomial coefficients for each training period (standardised factors; * = significant, p < 0.05).",
+    kolKoef: ["Factor", "Trained to 2013", "to 2016", "to 2019", "to 2022"],
+    faktor: { log_pga: "Ground shaking (PGA, log)", log_penduduk: "Population (log)", log_kepadatan: "Population density (log)", p0: "Poverty rate" } as Record<string, string>,
+    barisModel: ["Training pairs (damaged)", "Pseudo-R²"],
     s3Catatan:
-      "The conclusion is the same in all five scenarios. When zero damage is only assumed for districts that were shaken fairly hard, poverty becomes significant (p = 0.027 and 0.004). This is treated as exploratory.",
-    s4: "4. Connected zones (SKATER) vs free zones (K-Means)",
+      "Shaking and population have a strong effect in every period. For the same population, denser districts see less damage; better urban buildings could explain this, but the data cannot confirm it. The poverty effect changes direction between periods, so there is no evidence of a stable effect.",
+    s4: "4. Does it get the amount of damage right? (calibration)",
+    s4Ket: "Observed damage divided by predicted damage, by risk class (1 = correct, below 1 = the prediction is too high).",
+    kolKal: ["Class", "2014-16", "2017-19", "2020-22", "2023-26"],
+    total: "Total predicted / observed",
+    s4Catatan:
+      "Predicted damage totals are far off. The 2017-2019 period is too low because it includes the 2018 Lombok and Palu earthquakes, and the last two periods are more than 20 times too high. The NB-EAD index can rank districts, but its damaged houses per year should not be read as a loss estimate.",
+    s5: "5. What makes the index work (exploratory)",
+    s5Ket: "Mean AUC of the NB-EAD index when one analysis choice changes. These results are not used to retest H1.",
+    kolEks: ["Variant", "Finite fault (main)", "Point source", "Source type from depth", "Along the trench"],
+    varian: {
+      utama: "Main model",
+      "ablation: bahaya saja": "Shaking only",
+      "ablation: + penduduk": "Shaking + population",
+      "ablation: + kepadatan": "Shaking + population + density",
+      "model: NB hurdle": "Hurdle model",
+      "bobot 1 / 0,5 / 0,25": "Damage weights 1 / 0.5 / 0.25",
+      "hanya rusak berat": "Heavy damage only",
+      "tau negatif persentil 25": "Zeros only where shaking was moderate",
+      "tau negatif persentil 50": "Zeros only where shaking was strong",
+      "+ magnitudo": "Adding magnitude",
+    } as Record<string, string>,
+    s5Catatan:
+      "Shaking and population carry nearly all of the predictive skill. The assumption about which districts count as undamaged matters most: when zeros are limited to districts that were shaken fairly hard, the AUC rises by about 0.03. Model form, damage weights and the way earthquakes are classified barely matter.",
+    s6: "6. Modelled shaking against ShakeMap, and the fault problem",
+    s6Ket: (n: number) => `For the ${n} earthquakes that have a USGS ShakeMap, modelled shaking is compared with that official shaking map (log scale; bias above 0 = the model is too high, 0.30 is about a factor of two).`,
+    kolSm: ["Group", "Pairs", "Correlation (fault)", "Bias (fault)", "Correlation (point)", "Bias (point)"],
+    subset: { semua: "All", "ShakeMap dengan observasi": "ShakeMaps with recordings or reports", "kab rusak DIBI": "Damaged districts" } as Record<string, string>,
+    s6a:
+      "Modelled shaking closely matches ShakeMap. The problem is with giant earthquakes. The fault correction shortens the distance by half the rupture length in every direction, while subduction ruptures actually run along the trench. For the 2004 Aceh earthquake (M 9.1) that half-length is about 425 km, so the North Sumatra mainland ends up on top of the fault. As a result, Deli Serdang, Medan, Langkat and Simalungun rank as the riskiest districts in the last period.",
+    kolGeo: ["", "Finite fault (main)", "Along the trench (exploratory)", "Point source"],
+    barisGeo: ["AUC by period", "Mean AUC", "Difference from equal weights", "Bias against ShakeMap, all events", "Bias against ShakeMap, M ≥ 7.5", "PGA at Deli Serdang, Aceh 2004"],
+    s6b:
+      "An exploratory run placed subduction ruptures along the trench. Shaking from large earthquakes then came closest to ShakeMap and most of the lost skill returned, but the NB-EAD index still did not beat equal weights. Because this run was decided after the main results were seen, it is not used to retest H1. The main version is still reported as preregistered.",
+    s7: "7. Connected zones (SKATER) vs free zones (K-Means)",
+    s7Ket: "Five zones built from the risk score and shaking of the last period (trained to 2022).",
     kolZona: ["Five zones", "SKATER", "K-Means"],
-    zonaBaris: ["Similarity within zones (R²)", "Silhouette", "Separate pieces (5 = every zone connected)"],
-    s4a: ["Hypothesis H2 is rejected for five zones.", " The SKATER zones are connected, but their similarity drops by 0.31. SKATER's low zone merges all of Java, Bali, and Nusa Tenggara, including Lombok and Cianjur, even though that zone holds 101 of the 152 districts damaged in 2020-2026. SKATER only matches five-zone K-Means at around 30 zones. See the zone layers on the Map page."],
-    s5: "5. Comparison with the OJK 2017 tariff zones",
-    silang: "Number of districts: NB-EAD risk class × OJK zone",
-    kelas: "Class",
-    zona: "Zone",
-    s5a: (k: string, s: string, p: number) => `Agreement is moderate: weighted kappa ${k}, rank correlation ${s}, and the exact same class in ${p}% of districts.`,
-    s5b: "Three districts (Kolaka, Muna, Tarakan) sit in OJK zones I-II although the NB-EAD score puts them in the top two classes. In the other direction, 52 districts, mostly on the north coast of Java and in Jakarta, sit in OJK zones IV-V despite low scores.",
-    s5c:
-      "These gaps do not mean the rates are too high or too low. The NB-EAD score only records damaging shaking over 47 years, while the OJK zones come from hazard maps that account for rare large earthquakes and ground conditions, such as faults near Jakarta. The gaps simply flag districts worth reviewing.",
+    zonaBaris: ["Similarity within zones (R²)", "Silhouette", "Separate pieces (5 = every zone connected)", "Similarity within zones, point-source version"],
+    s7a: (a: string, b: string) => [
+      "Hypothesis H2 is rejected.",
+      ` The SKATER zones are connected, but their similarity drops by ${a} (point-source version: ${b}), well above the 0.10 limit set in advance. Earthquake risk is too localised to split into five national zones that must each be one connected area.`,
+    ],
   },
 };
 
+function Tabel({ kolom, children, kecil }: { kolom: string[]; children: ReactNode; kecil?: boolean }) {
+  return (
+    <div className="overflow-x-auto rounded-[1.25rem] border border-base-300">
+      <table className={`table ${kecil ? "table-sm" : ""}`}>
+        <thead>
+          <tr>
+            {kolom.map((c, i) => (
+              <th key={i} className={i ? "text-right" : ""}>
+                {c}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="tabular-nums">{children}</tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function Hasil({ lang }: { lang: Lang }) {
   const t = T[lang];
-  const n = (x: number, d = 3) => f(x, d, lang);
-  const baris = (k: "auc_rusak" | "spearman") => validasi.map((v) => ({ label: namaIndeks(v.indeks, lang), nilai: v[k], sorot: v.indeks.startsWith("USULAN") }));
-  const forest = (metrik: "auc_rusak" | "spearman") =>
-    PEMBANDING.flatMap((p) =>
-      (
-        [
-          [t.skemaKab, R.bootstrap_kab],
-          [t.skemaProv, R.bootstrap_prov],
-        ] as const
-      ).map(([skema, src]) => {
-        const r = src.find((x) => x.pembanding === p && x.metrik === metrik)!;
-        return { grup: namaIndeks(p, lang), skema, est: r.selisih, lo: r.ci95_bawah, hi: r.ci95_atas, sig: r.signifikan };
-      }),
-    );
-  // Nilai signifikan tersimpan sebagai teks "+0.161*", yang lain sebagai angka.
-  const sel = (v: string | number) => {
-    const x = typeof v === "number" ? v : parseFloat(v);
-    return `${x >= 0 ? "+" : ""}${n(x)}${typeof v === "string" && v.endsWith("*") ? "*" : ""}`;
-  };
-  const zm = { SKATER: R.zonasi_metrik[0], KMEANS: R.zonasi_metrik[1] };
-  const kolomOjk = ["1", "2", "3", "4", "5"] as const;
-  const maks = Math.max(...R.ojk_silang.flatMap((r) => kolomOjk.map((c) => r[c])));
-  const kes = R.ojk_kesepakatan[0];
+  const n = (x: number | null, d = 3) => (x == null ? "–" : f(x, d, lang));
+  const tanda = (x: number) => `${x > 0 ? "+" : ""}${n(x)}`;
+  const urut = [...auc].sort((a, b) => b.rata2 - a.rata2);
+  const forest = R.h1.flatMap((h) => [
+    { grup: namaIndeks(h.pembanding, lang), skema: t.skemaProv, est: h.selisih, lo: h.prov[0], hi: h.prov[1], sig: h.prov[0] > 0 || h.prov[1] < 0 },
+    { grup: namaIndeks(h.pembanding, lang), skema: t.skemaKab, est: h.selisih, lo: h.kab[0], hi: h.kab[1], sig: h.kab[0] > 0 || h.kab[1] < 0 },
+  ]);
+  const E = R.eksplorasi as Record<string, Record<string, number> | number[] | number>;
+  const eks = (geo: string, v: string) => (E[geo] as Record<string, number>)[v];
+  const B = R.bias_geometri;
+  const z = R.zonasi;
 
   return (
     <Halaman label={t.label} judul={t.judul} pengantar={<p>{t.pengantar}</p>}>
-      <Bagian id="model" judul={t.s1} keterangan={t.s1Ket}>
-        <div className="overflow-x-auto rounded-[1.25rem] border border-base-300">
-          <table className="table">
-            <thead>
-              <tr>
-                {t.kolModel.map((c, i) => (
-                  <th key={c} className={i ? "text-right" : ""}>
-                    {c}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="tabular-nums">
-              {R.nb_koef
-                .filter((r) => r.var !== "const")
-                .map((r) => (
-                  <tr key={r.var}>
-                    <td>{t.fitur[r.var]}</td>
-                    <td className="text-right">{n(r.koef)}</td>
-                    <td className="text-right">{n(r.se)}</td>
-                    <td className="text-right">{r.p < 0.001 ? `< ${n(0.001)}` : n(r.p)}</td>
-                    <td className="text-right">{r.irr_per_1sd < 0.01 ? n(r.irr_per_1sd, 4) : n(r.irr_per_1sd, 2)}×</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
+      <Bagian id="validasi" judul={t.s1} keterangan={t.s1Ket(R.lipatan.map((l) => l.n_rusak).join(", "))}>
+        <Tabel kolom={t.kolAuc}>
+          {urut.map((v) => (
+            <tr key={v.indeks} className={v.indeks === USULAN ? "font-semibold" : ""}>
+              <td>{namaIndeks(v.indeks, lang)}</td>
+              {v.lipatan.map((x, i) => (
+                <td key={i} className="text-right">
+                  {n(x)}
+                </td>
+              ))}
+              <td className="text-right font-semibold">{n(v.rata2)}</td>
+              <td className="text-right">{n(v.spearman_rata2)}</td>
+            </tr>
+          ))}
+        </Tabel>
+        <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+          <DotPlot lang={lang} judul={t.dotJudul} baris={urut.map((v) => ({ label: namaIndeks(v.indeks, lang), nilai: v.rata2, sorot: v.indeks === USULAN }))} domain={[0.45, 0.7]} acuan={0.5} acuanLabel={t.dotAcuan} />
+          <p className="self-center text-base-content/80">{t.s1Catatan}</p>
         </div>
-        <p className="mt-3 max-w-3xl text-sm text-base-content/70">
-          α = {n(97.3, 1)}; pseudo-R² = {n(0.222)}. {t.s1Catatan(n(R.pasangan_uji[0].auc_rusak), n(R.pasangan_uji[1].auc_rusak))}
-        </p>
       </Bagian>
 
-      <Bagian id="validasi" judul={t.s2} keterangan={t.s2Ket}>
+      <Bagian id="h1" judul={t.s2} keterangan={t.s2Ket}>
         <div className="grid gap-4 lg:grid-cols-2">
-          <DotPlot lang={lang} judul={t.aucJudul} baris={baris("auc_rusak")} domain={[0.45, 0.7]} acuan={0.5} acuanLabel={t.aucAcuan} />
-          <DotPlot lang={lang} judul={t.spJudul} baris={baris("spearman")} domain={[-0.05, 0.3]} acuan={0} acuanLabel={t.spAcuan} />
-        </div>
-        <div className="mt-4 overflow-x-auto rounded-[1.25rem] border border-base-300">
-          <table className="table">
-            <thead>
-              <tr>
-                {t.kolValidasi.map((c, i) => (
-                  <th key={c} className={i ? "text-right" : ""}>
-                    {c}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="tabular-nums">
-              {validasi.map((v) => (
-                <tr key={v.indeks} className={v.indeks.startsWith("USULAN") ? "font-semibold" : ""}>
-                  <td>{namaIndeks(v.indeks, lang)}</td>
-                  <td className="text-right">{n(v.spearman)}</td>
-                  <td className="text-right">{n(v.auc_rusak)}</td>
-                  <td className="text-right">{n(v.presisi_top50, 2)}</td>
-                  <td className="text-right">{n(v.tangkap_top10pct)}</td>
+          <Forest lang={lang} judul={t.forest} baris={forest} domain={[-0.15, 0.3]} />
+          <div className="space-y-4">
+            <Tabel kolom={t.kolH1} kecil>
+              {R.h1.map((h) => (
+                <tr key={h.pembanding}>
+                  <td>{namaIndeks(h.pembanding, lang)}</td>
+                  <td className="text-right">{tanda(h.selisih)}</td>
+                  <td className="text-right">{n(h.p_holm, 2)}</td>
+                  <td className={`text-right ${h.keputusan === "Didukung" ? "font-semibold" : ""}`}>{t.keputusan[h.keputusan]}</td>
+                  <td className="text-right">
+                    {tanda(h.titik_selisih)}, {t.keputusan[h.titik_keputusan].toLowerCase()}
+                  </td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <Forest lang={lang} judul={t.forestAuc} baris={forest("auc_rusak")} domain={[-0.15, 0.3]} />
-          <Forest lang={lang} judul={t.forestSp} baris={forest("spearman")} domain={[-0.2, 0.4]} />
-        </div>
-        <div className="prosa mt-4 max-w-3xl text-base-content/80">
-          <p>
-            <strong>{t.s2a[0]}</strong>
-            {t.s2a[1]}
-          </p>
-          <p>{t.s2b}</p>
+            </Tabel>
+            <div className="prosa space-y-3 text-base-content/80">
+              <p>
+                <strong>{t.s2a[0]}</strong>
+                {t.s2a[1]}
+              </p>
+              <p>{t.s2b}</p>
+            </div>
+          </div>
         </div>
       </Bagian>
 
-      <Bagian id="ketahanan" judul={t.s3} keterangan={t.s3Ket}>
-        <div className="overflow-x-auto rounded-[1.25rem] border border-base-300">
-          <table className="table table-sm">
-            <thead>
-              <tr>
-                <th>{t.kolSkenario[0]}</th>
-                <th className="text-right">{t.kolSkenario[1]}</th>
-                {PEMBANDING.map((p) => (
-                  <th key={p} className="text-right">
-                    {t.kolKetahanan(namaIndeks(p, lang))}
-                  </th>
-                ))}
-                <th className="text-right">{t.kolSkenario[2]}</th>
-              </tr>
-            </thead>
-            <tbody className="tabular-nums">
-              {R.ketahanan.map((k) => (
-                <tr key={k.skenario}>
-                  <td>{t.skenario[k.skenario]}</td>
-                  <td className="text-right">{n(k.auc)}</td>
-                  {PEMBANDING.map((p) => (
-                    <td key={p} className="text-right">
-                      {sel(k[`auc_vs_${p}` as keyof typeof k] as string | number)}
-                    </td>
-                  ))}
-                  <td className="text-right">{n(k.p_p0)}</td>
-                </tr>
+      <Bagian id="model" judul={t.s3} keterangan={t.s3Ket}>
+        <Tabel kolom={t.kolKoef}>
+          {R.koef.map((k) => (
+            <tr key={k.var}>
+              <td>{t.faktor[k.var]}</td>
+              {k.koef.map((x, i) => (
+                <td key={i} className="text-right">
+                  {n(x)}
+                  {k.sig[i] ? "*" : ""}
+                </td>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </tr>
+          ))}
+          <tr className="text-base-content/70">
+            <td>{t.barisModel[0]}</td>
+            {R.model.map((m) => (
+              <td key={m.lipatan} className="text-right">
+                {f(m.n_latih, 0, lang)} ({m.n_latih_rusak})
+              </td>
+            ))}
+          </tr>
+          <tr className="text-base-content/70">
+            <td>{t.barisModel[1]}</td>
+            {R.model.map((m) => (
+              <td key={m.lipatan} className="text-right">
+                {n(m.pseudo_r2)}
+              </td>
+            ))}
+          </tr>
+        </Tabel>
         <p className="mt-3 max-w-3xl text-sm text-base-content/70">{t.s3Catatan}</p>
       </Bagian>
 
-      <Bagian id="zonasi" judul={t.s4}>
-        <div className="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
-          <div className="overflow-x-auto rounded-[1.25rem] border border-base-300">
-            <table className="table">
-              <thead>
-                <tr>
-                  {t.kolZona.map((c, i) => (
-                    <th key={c} className={i ? "text-right" : ""}>
-                      {c}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="tabular-nums">
-                <tr>
-                  <td>{t.zonaBaris[0]}</td>
-                  <td className="text-right">{n(zm.SKATER.R2_antar_zona)}</td>
-                  <td className="text-right">{n(zm.KMEANS.R2_antar_zona)}</td>
-                </tr>
-                <tr>
-                  <td>{t.zonaBaris[1]}</td>
-                  <td className="text-right">{n(zm.SKATER.silhouette)}</td>
-                  <td className="text-right">{n(zm.KMEANS.silhouette)}</td>
-                </tr>
-                <tr>
-                  <td>{t.zonaBaris[2]}</td>
-                  <td className="text-right">{zm.SKATER.total_fragmen}</td>
-                  <td className="text-right">{zm.KMEANS.total_fragmen}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <GarisK lang={lang} data={R.zonasi_diagnostik} />
-        </div>
-        <p className="mt-4 max-w-3xl text-base-content/80">
-          <strong>{t.s4a[0]}</strong>
-          {t.s4a[1]}
-        </p>
+      <Bagian id="kalibrasi" judul={t.s4} keterangan={t.s4Ket}>
+        <Tabel kolom={t.kolKal}>
+          {[0, 1, 2, 3, 4].map((i) => (
+            <tr key={i}>
+              <td>{i + 1}</td>
+              {R.kalibrasi.map((k) => (
+                <td key={k.lipatan} className="text-right">
+                  {n(k.rasio[i], 2)}
+                </td>
+              ))}
+            </tr>
+          ))}
+          <tr className="font-medium">
+            <td>{t.total}</td>
+            {R.kalibrasi.map((k) => (
+              <td key={k.lipatan} className="whitespace-nowrap text-right">
+                {f(k.perkiraan, 0, lang)} / {f(k.teramati, 0, lang)}
+              </td>
+            ))}
+          </tr>
+        </Tabel>
+        <div className="mt-4 max-w-3xl rounded-[1.25rem] bg-warning p-4 text-sm text-warning-content">{t.s4Catatan}</div>
       </Bagian>
 
-      <Bagian id="ojk" judul={t.s5}>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <figure className="rounded-[1.25rem] bg-base-200/60 p-5">
-            <figcaption className="font-medium">{t.silang}</figcaption>
-            <table className="mt-3 w-full table-fixed text-center text-sm tabular-nums">
-              <thead>
-                <tr className="text-base-content/60">
-                  <th className="w-20 py-1 text-left font-normal">{t.kelas}</th>
-                  {["I", "II", "III", "IV", "V"].map((z) => (
-                    <th key={z} className="py-1 font-normal">
-                      {t.zona} {z}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {R.ojk_silang.map((r) => (
-                  <tr key={r["kelas EAD"]}>
-                    <td className="py-0.5 text-left text-base-content/60">{r["kelas EAD"]}</td>
-                    {kolomOjk.map((c) => {
-                      const v = r[c];
-                      const k = v / maks;
-                      return (
-                        <td key={c} className="p-0.5">
-                          <div
-                            className="rounded-lg py-2"
-                            style={{ background: `color-mix(in oklab, var(--viz-1) ${Math.round(k * 85)}%, var(--viz-surface))`, color: k > 0.55 ? "var(--viz-surface)" : undefined }}
-                          >
-                            {v}
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </figure>
-          <div className="space-y-3 text-base-content/80">
-            <p>{t.s5a(n(kes.kappa_kuadratik, 2), n(kes.spearman, 2), Math.round(kes.persen_sama_persis * 100))}</p>
-            <p>{t.s5b}</p>
-            <div className="rounded-[1.25rem] bg-warning p-4 text-sm text-warning-content">{t.s5c}</div>
-          </div>
+      <Bagian id="ketahanan" judul={t.s5} keterangan={t.s5Ket}>
+        <Tabel kolom={t.kolEks} kecil>
+          {Object.keys(t.varian).map((v) => (
+            <tr key={v} className={v === "utama" ? "font-semibold" : ""}>
+              <td>{t.varian[v]}</td>
+              {["patahan", "titik", "kedalaman", "jalur"].map((g) => (
+                <td key={g} className="text-right">
+                  {n(eks(g, v))}
+                  {g === "titik" && v === "model: NB hurdle" ? "†" : ""}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </Tabel>
+        <p className="mt-2 text-xs text-base-content/60">{lang === "en" ? "† Fold 1 did not converge; mean of three periods." : "† Periode pertama gagal konvergen; rata-rata tiga periode."}</p>
+        <p className="mt-3 max-w-3xl text-sm text-base-content/70">{t.s5Catatan}</p>
+      </Bagian>
+
+      <Bagian id="shakemap" judul={t.s6} keterangan={t.s6Ket(R.angka.shakemap_gempa)}>
+        <Tabel kolom={t.kolSm} kecil>
+          {R.shakemap.map((s) => (
+            <tr key={s.subset}>
+              <td>{t.subset[s.subset] ?? s.subset}</td>
+              <td className="text-right">{f(s.n, 0, lang)}</td>
+              <td className="text-right">{n(s.patahan_r_log10)}</td>
+              <td className="text-right">{tanda(s.patahan_bias_log10)}</td>
+              <td className="text-right">{n(s.titik_r_log10)}</td>
+              <td className="text-right">{tanda(s.titik_bias_log10)}</td>
+            </tr>
+          ))}
+        </Tabel>
+        <p className="prosa mt-4 max-w-3xl text-base-content/80">{t.s6a}</p>
+        <div className="mt-4">
+          <Tabel kolom={t.kolGeo} kecil>
+            <tr>
+              <td>{t.barisGeo[0]}</td>
+              {GEO.map((g) => (
+                <td key={g} className="whitespace-nowrap text-right">
+                  {(E[`${g}_lipatan`] as number[]).map((x) => n(x)).join(" · ")}
+                </td>
+              ))}
+            </tr>
+            <tr className="font-semibold">
+              <td>{t.barisGeo[1]}</td>
+              {GEO.map((g) => (
+                <td key={g} className="text-right">
+                  {n(eks(g, "utama"))}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td>{t.barisGeo[2]}</td>
+              {GEO.map((g) => (
+                <td key={g} className="text-right">
+                  {tanda(E[`${g}_vs_setara`] as number)}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td>{t.barisGeo[3]}</td>
+              {GEO.map((g) => (
+                <td key={g} className="text-right">
+                  {tanda(B[g].semua)}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td>{t.barisGeo[4]}</td>
+              {GEO.map((g) => (
+                <td key={g} className="text-right">
+                  {tanda(B[g].besar)}
+                </td>
+              ))}
+            </tr>
+            <tr>
+              <td>{t.barisGeo[5]}</td>
+              {GEO.map((g) => (
+                <td key={g} className="text-right">
+                  {n(DELI[g])} g
+                </td>
+              ))}
+            </tr>
+          </Tabel>
         </div>
+        <p className="mt-3 max-w-3xl text-sm text-base-content/70">{t.s6b}</p>
+      </Bagian>
+
+      <Bagian id="zonasi" judul={t.s7} keterangan={t.s7Ket}>
+        <div className="max-w-2xl">
+          <Tabel kolom={t.kolZona}>
+            <tr>
+              <td>{t.zonaBaris[0]}</td>
+              <td className="text-right">{n(z.SKATER.r2)}</td>
+              <td className="text-right">{n(z["K-Means"].r2)}</td>
+            </tr>
+            <tr>
+              <td>{t.zonaBaris[1]}</td>
+              <td className="text-right">{n(z.SKATER.silhouette)}</td>
+              <td className="text-right">{n(z["K-Means"].silhouette)}</td>
+            </tr>
+            <tr>
+              <td>{t.zonaBaris[2]}</td>
+              <td className="text-right">{z.SKATER.bagian}</td>
+              <td className="text-right">{z["K-Means"].bagian}</td>
+            </tr>
+            <tr>
+              <td>{t.zonaBaris[3]}</td>
+              <td className="text-right">{n(z.SKATER.r2_titik)}</td>
+              <td className="text-right">{n(z["K-Means"].r2_titik)}</td>
+            </tr>
+          </Tabel>
+        </div>
+        <p className="mt-4 max-w-3xl text-base-content/80">
+          <strong>{t.s7a(n(z.penurunan), n(z.penurunan_titik))[0]}</strong>
+          {t.s7a(n(z.penurunan), n(z.penurunan_titik))[1]}
+        </p>
       </Bagian>
     </Halaman>
   );
